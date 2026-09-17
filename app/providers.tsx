@@ -1,6 +1,6 @@
 "use client";
 
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { ThemeProvider } from "next-themes";
@@ -40,8 +40,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           {children}
         </PersistQueryClientProvider>
       ) : (
-        // Fallback for SSR / before mount
-        children
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
       )}
     </ThemeProvider>
   );
