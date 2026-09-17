@@ -78,30 +78,30 @@ function StatCard({ label, sub, color, icon, value, prev, extra }: CardDef) {
   const display = useCountUp(value);
   return (
     <div className={`stat-card ${color} fade-up`}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
         <div>
-          <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.85, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.85, textTransform: "uppercase", letterSpacing: "0.05em" }}>
             {label}
           </div>
-          <div style={{ fontSize: 11, opacity: 0.65, marginTop: 2 }}>{sub}</div>
+          <div style={{ fontSize: 10, opacity: 0.7, marginTop: 1 }}>{sub}</div>
         </div>
         <div
           style={{
-            width: 40, height: 40, borderRadius: 10,
+            width: 32, height: 32, borderRadius: 8,
             background: "rgba(255,255,255,0.15)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 20, zIndex: 1, position: "relative",
+            fontSize: 16, zIndex: 1, position: "relative",
           }}
         >
           {icon}
         </div>
       </div>
-      <div style={{ fontSize: 36, fontWeight: 800, lineHeight: 1, marginBottom: 8 }}>
+      <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, marginBottom: 8 }}>
         {display.toLocaleString()}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         {prev !== undefined && <TrendChip current={value} previous={prev} />}
-        {extra && <span style={{ fontSize: 11, opacity: 0.75 }}>{extra}</span>}
+        {extra && <span style={{ fontSize: 10, opacity: 0.75 }}>{extra}</span>}
       </div>
     </div>
   );
@@ -112,8 +112,10 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
 
   if (isLoading || !stats) {
     return (
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
-        {colors.map((c) => <SkeletonCard key={c} color={c} />)}
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, width: "100%", maxWidth: 1200 }}>
+          {colors.map((c) => <SkeletonCard key={c} color={c} />)}
+        </div>
       </div>
     );
   }
@@ -162,8 +164,10 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
   ];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
-      {cards.map((c) => <StatCard key={c.label} {...c} />)}
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, width: "100%", maxWidth: 1200 }}>
+        {cards.map((c) => <StatCard key={c.label} {...c} />)}
+      </div>
     </div>
   );
 }

@@ -50,14 +50,38 @@ export function Topbar({
 
   return (
     <div className="topbar">
-      {/* Page title */}
-      <div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.2 }}>
-          {title}
-        </h1>
-        {subtitle && (
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{subtitle}</p>
-        )}
+      {/* Left side: Logo & Title */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 10,
+            background: "#ffffff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            overflow: "hidden",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            padding: 2,
+          }}
+        >
+          {/* Using img for simplicity since next/image needs import/config sometimes */}
+          <img
+            src="https://static.wixstatic.com/media/68b92a_d71e34133826499983234774dea1945b~mv2.png/v1/fill/w_186,h_156,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/RKD-Logo.png"
+            alt="RKD Furnishings Logo"
+            style={{ objectFit: "contain", width: "100%", height: "100%" }}
+          />
+        </div>
+        <div>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.2 }}>
+            {title}
+          </h1>
+          {subtitle && (
+            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{subtitle}</p>
+          )}
+        </div>
       </div>
 
       {/* Right actions */}
@@ -135,25 +159,6 @@ export function Topbar({
           </button>
         )}
 
-        {/* Avatar */}
-        <div
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 8,
-            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 13,
-            fontWeight: 700,
-            color: "#fff",
-            cursor: "pointer",
-          }}
-          title="RKD Furnishings Pvt. Ltd."
-        >
-          RKD
-        </div>
       </div>
     </div>
   );

@@ -1,5 +1,30 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: var(--bg);
+  --color-foreground: var(--text-primary);
+  --color-card: var(--bg-card);
+  --color-card-foreground: var(--text-primary);
+  --color-popover: var(--bg-card);
+  --color-popover-foreground: var(--text-primary);
+  --color-primary: var(--purple);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--bg-card);
+  --color-secondary-foreground: var(--text-primary);
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: var(--text-muted);
+  --color-accent: var(--bg-card);
+  --color-accent-foreground: var(--text-primary);
+  --color-destructive: var(--red);
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--purple-light);
+  --radius-xl: 12px;
+  --radius-lg: var(--radius);
+  --radius-md: 8px;
+  --radius-sm: 4px;
+}
 /* ── Design Tokens — LIGHT DEFAULT ─── */
 :root {
   --sidebar-bg: #1e2a3a;
@@ -77,7 +102,7 @@ body {
 /* ── Stat Cards ─── */
 .stat-card {
   border-radius: var(--radius);
-  padding: 22px 20px;
+  padding: 16px 16px;
   color: #fff;
   position: relative;
   overflow: hidden;
@@ -88,16 +113,16 @@ body {
 .stat-card::before {
   content: '';
   position: absolute;
-  top: -24px; right: -24px;
-  width: 130px; height: 130px;
+  top: -20px; right: -20px;
+  width: 90px; height: 90px;
   background: rgba(255,255,255,0.10);
   border-radius: 50%;
 }
 .stat-card::after {
   content: '';
   position: absolute;
-  bottom: -36px; right: 16px;
-  width: 90px; height: 90px;
+  bottom: -24px; right: 10px;
+  width: 60px; height: 60px;
   background: rgba(255,255,255,0.06);
   border-radius: 50%;
 }
@@ -107,62 +132,9 @@ body {
 .stat-amber  { background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); box-shadow: 0 6px 20px rgba(217,119,6,0.30); }
 .stat-green  { background: linear-gradient(135deg, #059669 0%, #10b981 100%); box-shadow: 0 6px 20px rgba(5,150,105,0.30); }
 
-/* ── Sidebar ─── */
-.sidebar {
-  width: var(--sidebar-width);
-  background: var(--sidebar-bg);
-  min-height: 100vh;
-  position: fixed;
-  left: 0; top: 0;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-  box-shadow: 2px 0 16px rgba(0,0,0,0.10);
-}
-.sidebar-logo {
-  padding: 18px 20px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-}
-.sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
-.sidebar-item {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 10px 20px;
-  color: var(--sidebar-text);
-  text-decoration: none;
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border-left: 3px solid transparent;
-  margin: 1px 8px;
-  border-radius: 8px;
-}
-.sidebar-item:hover {
-  background: var(--sidebar-hover);
-  color: #e2e8f0;
-  border-left-color: transparent;
-}
-.sidebar-item.active {
-  background: rgba(99,102,241,0.18);
-  color: #ffffff;
-  border-left-color: #6366f1;
-  font-weight: 600;
-}
-.sidebar-section {
-  padding: 14px 20px 4px;
-  font-size: 9.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.22);
-  font-weight: 700;
-}
-
 /* ── Main content ─── */
 .main-content {
-  margin-left: var(--sidebar-width);
+  width: 100%;
   min-height: 100vh;
 }
 

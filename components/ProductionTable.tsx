@@ -231,7 +231,7 @@ export function ProductionTable({ rows, isLoading }: ProductionTableProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-border glass-card overflow-hidden">
+    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
       {/* Table toolbar */}
       <div className="flex flex-wrap gap-3 items-center justify-between px-5 py-4 border-b border-border">
         <div className="flex items-center gap-3">
@@ -278,45 +278,47 @@ export function ProductionTable({ rows, isLoading }: ProductionTableProps) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/20">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-10">
+      <div className="overflow-x-auto relative w-full">
+        <table className="w-full text-sm border-collapse min-w-[800px]">
+          <thead className="bg-muted/40 sticky top-0 z-10 backdrop-blur-md">
+            <tr>
+              <th className="px-5 py-3.5 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border/60 w-12">
                 #
               </th>
               {COLUMNS.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider ${col.className ?? ""} ${
-                    col.sortable ? "cursor-pointer hover:text-foreground select-none" : ""
+                  className={`px-5 py-3.5 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border/60 ${col.className ?? ""} ${
+                    col.sortable ? "cursor-pointer hover:text-foreground select-none group" : ""
                   }`}
                   onClick={() => col.sortable && handleSort(col.key)}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     {col.label}
                     {col.sortable && (
-                      <SortIcon dir={sortKey === col.key ? sortDir : "none"} />
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <SortIcon dir={sortKey === col.key ? sortDir : "none"} />
+                      </div>
                     )}
                   </div>
                 </th>
               ))}
-              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-24">
+              <th className="px-5 py-3.5 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border/60 w-24">
                 Date
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-card divide-y divide-border/40">
             {isLoading &&
               Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
 
             {!isLoading && paginatedRows.length === 0 && (
               <tr>
-                <td colSpan={COLUMNS.length + 2} className="py-20 text-center">
+                <td colSpan={COLUMNS.length + 2} className="py-24 text-center">
                   <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                    <PackageOpen size={40} className="opacity-30" />
-                    <p className="text-sm">No records found</p>
-                    <p className="text-xs opacity-70">Try adjusting your filters or search query</p>
+                    <PackageOpen size={40} className="opacity-30 mb-2" />
+                    <p className="text-sm font-medium text-foreground">No records found</p>
+                    <p className="text-[13px] opacity-70">Try adjusting your filters or search query</p>
                   </div>
                 </td>
               </tr>
@@ -326,19 +328,17 @@ export function ProductionTable({ rows, isLoading }: ProductionTableProps) {
               paginatedRows.map((row, idx) => (
                 <tr
                   key={`${row["Buyer PO Number"]}-${row.karigarInfo.fullRaw}-${row.Date}-${idx}`}
-                  className={`border-b border-border/50 transition-colors hover:bg-primary/5 ${
-                    idx % 2 === 0 ? "bg-transparent" : "bg-muted/10"
-                  }`}
+                  className="group transition-colors hover:bg-muted/30"
                 >
-                  <td className="px-4 py-3 text-xs text-muted-foreground tabular-nums">
+                  <td className="px-5 py-4 text-[13px] text-muted-foreground tabular-nums">
                     {(page - 1) * pageSize + idx + 1}
                   </td>
                   {COLUMNS.map((col) => (
-                    <td key={col.key} className={`px-4 py-3 ${col.className ?? ""}`}>
-                      {col.render ? col.render(row) : String(row[col.key as keyof ProcessedRow] ?? "")}
+                    <td key={col.key} className={`px-5 py-4 align-middle ${col.className ?? ""}`}>
+                      {col.render ? col.render(row) : <span className="text-[13.5px]">{String(row[col.key as keyof ProcessedRow] ?? "")}</span>}
                     </td>
                   ))}
-                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                  <td className="px-5 py-4 text-[13px] text-muted-foreground whitespace-nowrap">
                     {row.Date}
                   </td>
                 </tr>

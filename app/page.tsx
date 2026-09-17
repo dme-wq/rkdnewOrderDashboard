@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { ApiResponse, ActiveFilters, ProcessedRow } from "@/lib/types";
 import { computeDailyDelta, applyFilters, aggregateStats } from "@/lib/transform";
-import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { StatCards } from "@/components/StatCards";
 import { KarigarRanking } from "@/components/KarigarRanking";
@@ -22,57 +21,31 @@ const DEFAULT_FILTERS: ActiveFilters = {
   karigarNames: [],
 };
 
-// ── Smart fetch: tries server proxy first, then direct client-side fetch ──────
-async function fetchProduction(): Promise<ApiResponse> {
+// Client-side background fetcher (bypasses proxy for faster subsequent loads if possible)
+async function fetchProductionClient(): Promise<ApiResponse> {
   const DIRECT_URL = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || "";
 
-  // 1. Try the server-side proxy (avoids CORS, works for public scripts)
   try {
     const proxyRes = await fetch("/api/production", {
       cache: "no-store",
-      signal: AbortSignal.timeout(15000), // 15s timeout
+      signal: AbortSignal.timeout(15000),
     });
 
     if (proxyRes.ok) {
       const data = await proxyRes.json();
       if (data.success) return data;
-      // If proxy gives us a detail about the error, log it
-      console.warn("[Proxy] Apps Script error:", data.error, data.detail ?? "");
     }
-  } catch (proxyErr) {
-    console.warn("[Proxy] Server proxy failed:", proxyErr);
+  } catch (err) {
+    // ignore
   }
 
-  // 2. Fallback: call Apps Script directly from browser (works when CORS allowed)
-  if (!DIRECT_URL) {
-    throw new Error(
-      "NEXT_PUBLIC_APPS_SCRIPT_URL is not set. Add it to Vercel environment variables and redeploy."
-    );
-  }
+  if (!DIRECT_URL) throw new Error("NEXT_PUBLIC_APPS_SCRIPT_URL is not set");
 
-  try {
-    const directRes = await fetch(DIRECT_URL, {
-      cache: "no-store",
-      signal: AbortSignal.timeout(20000),
-    });
-
-    if (!directRes.ok) {
-      throw new Error(
-        `Apps Script HTTP ${directRes.status}. Make sure the script is deployed with "Who has access: Anyone" (not domain-restricted).`
-      );
-    }
-
-    const data = await directRes.json();
-    if (!data.success) throw new Error(data.error || "Apps Script returned failure");
-    return data;
-  } catch (directErr) {
-    if (directErr instanceof TypeError && directErr.message.includes("fetch")) {
-      throw new Error(
-        "CORS blocked. In Apps Script: Deploy → Manage deployments → Who has access: Anyone (not restricted to rkd.in)."
-      );
-    }
-    throw directErr;
-  }
+  const directRes = await fetch(DIRECT_URL, { cache: "no-store", signal: AbortSignal.timeout(20000) });
+  if (!directRes.ok) throw new Error("Apps Script HTTP error");
+  const data = await directRes.json();
+  if (!data.success) throw new Error(data.error || "Failed to load data");
+  return data;
 }
 
 export default function DashboardPage() {
@@ -81,7 +54,7 @@ export default function DashboardPage() {
 
   const { data, isLoading, isError, error, dataUpdatedAt } = useQuery<ApiResponse>({
     queryKey: ["production"],
-    queryFn: fetchProduction,
+    queryFn: fetchProductionClient,
     refetchInterval: 60 * 1000,
     staleTime: 55 * 1000,
   });
@@ -107,21 +80,18 @@ export default function DashboardPage() {
   const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
-      <Sidebar />
-
-      <div className="main-content" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", width: "100%" }}>
+      <div className="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", width: "100%" }}>
         <Topbar
           title="Analytics Dashboard"
           subtitle="Live production tracker — Bathmat Tufting"
           lastUpdated={lastUpdated}
-          isLoading={isLoading}
+          isLoading={isLoading && !data} // Only show loading spinner if we don't have data
           isError={isError}
           onRefresh={handleRefresh}
         />
 
         <div style={{ padding: 24, flex: 1 }}>
-
           {/* Error banner */}
           {isError && (
             <div
@@ -133,7 +103,6 @@ export default function DashboardPage() {
                 overflow: "hidden",
               }}
             >
-              {/* Main error row */}
               <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px" }}>
                 <AlertTriangle size={16} color="#ef4444" style={{ flexShrink: 0, marginTop: 2 }} />
                 <div style={{ flex: 1 }}>
@@ -157,33 +126,10 @@ export default function DashboardPage() {
                   <RefreshCw size={11} /> Retry
                 </button>
               </div>
-
-              {/* Fix instructions box */}
-              <div
-                style={{
-                  margin: "0 16px 12px",
-                  padding: "10px 14px",
-                  borderRadius: 8,
-                  background: "rgba(239,68,68,0.06)",
-                  border: "1px solid rgba(239,68,68,0.12)",
-                }}
-              >
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#f87171", marginBottom: 6 }}>
-                  🔧 Fix Steps (Apps Script Deployment):
-                </div>
-                <ol style={{ fontSize: 11, color: "var(--text-secondary)", paddingLeft: 16, lineHeight: 1.8 }}>
-                  <li>Google Sheet kholo → Extensions → Apps Script</li>
-                  <li>Deploy → <strong>Manage deployments</strong> → pencil icon (Edit)</li>
-                  <li><strong>Who has access</strong> → <strong>Anyone</strong> (NOT &quot;Anyone with Google account&quot; or domain)</li>
-                  <li>New version deploy karo → URL copy karo</li>
-                  <li>Vercel → Environment Variables → <code style={{ background: "rgba(239,68,68,0.15)", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" }}>NEXT_PUBLIC_APPS_SCRIPT_URL</code> update karo</li>
-                  <li>Vercel pe Redeploy karo</li>
-                </ol>
-              </div>
             </div>
           )}
 
-          {/* Loading state */}
+          {/* Loading state - rarely visible now because of localStorage cache */}
           {isLoading && !data && (
             <div
               style={{
@@ -195,24 +141,24 @@ export default function DashboardPage() {
             >
               <Database size={14} color="#6366f1" />
               <span style={{ fontSize: 13, color: "#6366f1", fontWeight: 500 }}>
-                Connecting to Google Sheet... (trying proxy → direct)
+                Loading data...
               </span>
             </div>
           )}
 
           {/* Stat Cards */}
-          <StatCards stats={stats} isLoading={isLoading} />
+          <StatCards stats={stats} isLoading={isLoading && !data} />
 
           {/* Charts */}
           <div style={{ marginTop: 20 }}>
-            <ChartsRow stats={stats} isLoading={isLoading} />
+            <ChartsRow stats={stats} isLoading={isLoading && !data} />
           </div>
 
           {/* Top 5 / Bottom 5 Karigars */}
           <div style={{ marginTop: 20 }}>
             <KarigarRanking
               leaderboard={stats?.karigarLeaderboard ?? []}
-              isLoading={isLoading}
+              isLoading={isLoading && !data}
             />
           </div>
 
@@ -243,7 +189,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <ProductionTable rows={filteredRows} isLoading={isLoading} />
+            <ProductionTable rows={filteredRows} isLoading={isLoading && !data} />
           </div>
 
           <div style={{ height: 32 }} />

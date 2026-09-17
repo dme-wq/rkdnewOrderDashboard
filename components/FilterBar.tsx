@@ -2,9 +2,8 @@
 
 import { ActiveFilters, DatePreset, ProcessedRow } from "@/lib/types";
 import { getDateRangeForPreset } from "@/lib/transform";
-import { X, Filter, ChevronDown, Check } from "lucide-react";
+import { X, Filter, ChevronDown, Check, Calendar } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { format } from "date-fns";
 
 interface FilterBarProps {
   rows: ProcessedRow[];
@@ -47,51 +46,56 @@ function MultiSelect({ id, label, options, selected, onChange }: MultiSelectProp
     else onChange([...selected, val]);
   };
 
+  const isActive = selected.length > 0;
+
   return (
     <div ref={ref} className="relative">
       <button
         id={id}
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all duration-150 whitespace-nowrap
+        className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium border transition-all duration-200 whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-primary/50
           ${
-            selected.length > 0
-              ? "bg-primary/10 border-primary/40 text-primary"
-              : "bg-muted/40 border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+            isActive
+              ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
+              : "bg-card text-foreground border-border hover:border-primary/40 hover:bg-muted/30"
           }`}
       >
         {label}
-        {selected.length > 0 && (
-          <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+        {isActive && (
+          <span className="bg-white/20 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center justify-center min-w-[18px]">
             {selected.length}
           </span>
         )}
-        <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : "opacity-60"}`} />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1.5 z-50 min-w-[200px] max-h-56 overflow-y-auto
-          rounded-xl border border-border bg-card shadow-xl shadow-black/20 py-1">
+        <div className="absolute top-[calc(100%+8px)] left-0 z-50 min-w-[220px] max-h-64 overflow-y-auto
+          rounded-2xl border border-border bg-card shadow-lg shadow-black/5 py-2 animate-in fade-in slide-in-from-top-2">
           {options.length === 0 && (
-            <div className="px-3 py-2 text-xs text-muted-foreground">No options</div>
+            <div className="px-4 py-3 text-sm text-muted-foreground">No options available</div>
           )}
-          {options.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => toggle(opt)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-muted/60 transition-colors"
-            >
-              <div
-                className={`w-4 h-4 rounded flex items-center justify-center border flex-shrink-0 transition-colors ${
-                  selected.includes(opt)
-                    ? "bg-primary border-primary"
-                    : "border-border"
-                }`}
+          {options.map((opt) => {
+            const isSelected = selected.includes(opt);
+            return (
+              <button
+                key={opt}
+                onClick={() => toggle(opt)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-[13.5px] text-left hover:bg-muted/50 transition-colors focus:bg-muted/50 outline-none"
               >
-                {selected.includes(opt) && <Check size={10} className="text-white" />}
-              </div>
-              <span className="truncate">{opt}</span>
-            </button>
-          ))}
+                <div
+                  className={`w-4 h-4 rounded-[4px] flex items-center justify-center border transition-colors flex-shrink-0 ${
+                    isSelected
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "border-border bg-card"
+                  }`}
+                >
+                  {isSelected && <Check size={12} strokeWidth={3} />}
+                </div>
+                <span className="truncate">{opt}</span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -104,7 +108,7 @@ export function FilterBar({ rows, filters, onFiltersChange }: FilterBarProps) {
   const [activePreset, setActivePreset] = useState<DatePreset | "custom" | "">("");
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Derive unique options from rows, cascading based on selected filters
+  // Derive unique options
   const uniqueVals = useMemo(() => {
     const poSet = new Set<string>();
     const designSet = new Set<string>();
@@ -112,17 +116,17 @@ export function FilterBar({ rows, filters, onFiltersChange }: FilterBarProps) {
     const karigarSet = new Set<string>();
 
     for (const row of rows) {
-      poSet.add(row["Buyer PO Number"]?.trim());
-      designSet.add(row["Design Name"]?.trim());
-      colorSet.add(row["Yarn Color"]?.trim());
-      karigarSet.add(row.karigarInfo.name);
+      if (row["Buyer PO Number"]) poSet.add(row["Buyer PO Number"].trim());
+      if (row["Design Name"]) designSet.add(row["Design Name"].trim());
+      if (row["Yarn Color"]) colorSet.add(row["Yarn Color"].trim());
+      if (row.karigarInfo?.name) karigarSet.add(row.karigarInfo.name);
     }
 
     return {
-      poNumbers: [...poSet].filter(Boolean).sort(),
-      designNames: [...designSet].filter(Boolean).sort(),
-      yarnColors: [...colorSet].filter(Boolean).sort(),
-      karigarNames: [...karigarSet].filter(Boolean).sort(),
+      poNumbers: [...poSet].sort(),
+      designNames: [...designSet].sort(),
+      yarnColors: [...colorSet].sort(),
+      karigarNames: [...karigarSet].sort(),
     };
   }, [rows]);
 
@@ -154,123 +158,105 @@ export function FilterBar({ rows, filters, onFiltersChange }: FilterBarProps) {
     });
   };
 
-  const FilterContent = () => (
-    <div className="flex flex-wrap gap-2 items-center">
-      {/* Date presets */}
-      <div className="flex items-center gap-1 bg-muted/30 rounded-xl p-1 border border-border">
-        {DATE_PRESETS.map((p) => (
-          <button
-            key={p.value}
-            id={`preset-${p.value}`}
-            onClick={() => applyPreset(p.value)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
-              activePreset === p.value
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Custom date inputs */}
-      {activePreset === "custom" && (
-        <div className="flex items-center gap-2">
-          <input
-            id="date-from"
-            type="date"
-            value={filters.dateFrom}
-            onChange={(e) => onFiltersChange({ ...filters, dateFrom: e.target.value })}
-            className="px-2 py-1.5 rounded-lg text-xs border border-border bg-muted/40 text-foreground focus:outline-none focus:border-primary/60"
-          />
-          <span className="text-xs text-muted-foreground">–</span>
-          <input
-            id="date-to"
-            type="date"
-            value={filters.dateTo}
-            onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value })}
-            className="px-2 py-1.5 rounded-lg text-xs border border-border bg-muted/40 text-foreground focus:outline-none focus:border-primary/60"
-          />
-        </div>
-      )}
-
-      <div className="w-px h-5 bg-border hidden sm:block" />
-
-      {/* Multi-selects */}
-      <MultiSelect
-        id="filter-po"
-        label="PO Number"
-        options={uniqueVals.poNumbers}
-        selected={filters.poNumbers}
-        onChange={(v) => onFiltersChange({ ...filters, poNumbers: v })}
-      />
-      <MultiSelect
-        id="filter-design"
-        label="Design"
-        options={uniqueVals.designNames}
-        selected={filters.designNames}
-        onChange={(v) => onFiltersChange({ ...filters, designNames: v })}
-      />
-      <MultiSelect
-        id="filter-color"
-        label="Yarn Color"
-        options={uniqueVals.yarnColors}
-        selected={filters.yarnColors}
-        onChange={(v) => onFiltersChange({ ...filters, yarnColors: v })}
-      />
-      <MultiSelect
-        id="filter-karigar"
-        label="Karigar"
-        options={uniqueVals.karigarNames}
-        selected={filters.karigarNames}
-        onChange={(v) => onFiltersChange({ ...filters, karigarNames: v })}
-      />
-
-      {/* Clear all */}
-      {activeCount > 0 && (
-        <button
-          id="clear-filters"
-          onClick={clearAll}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-dashed border-border transition-all"
-        >
-          <X size={12} />
-          Clear all
-          <span className="bg-muted text-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-            {activeCount}
-          </span>
-        </button>
-      )}
-    </div>
-  );
-
   return (
-    <div className="sticky top-16 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 py-3 px-4 sm:px-6 lg:px-8">
-      {/* Mobile toggle */}
-      <div className="sm:hidden flex items-center justify-between mb-2">
-        <button
-          id="mobile-filters-toggle"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="flex items-center gap-2 text-sm font-medium text-foreground"
-        >
-          <Filter size={16} />
-          Filters
-          {activeCount > 0 && (
-            <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-              {activeCount}
-            </span>
+    <div className="w-full flex flex-col gap-4">
+      {/* Top Row: Date & Global Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        
+        {/* Left side: Date Presets */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/30 rounded-full border border-border">
+            <Calendar size={14} className="text-muted-foreground ml-1" />
+            {DATE_PRESETS.map((p) => (
+              <button
+                key={p.value}
+                onClick={() => applyPreset(p.value)}
+                className={`px-3 py-1 rounded-full text-[12.5px] font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+                  activePreset === p.value
+                    ? "bg-card text-foreground shadow-sm border border-border/50"
+                    : "text-muted-foreground hover:text-foreground border border-transparent hover:bg-muted/50"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Date Range */}
+          {activePreset === "custom" && (
+            <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => onFiltersChange({ ...filters, dateFrom: e.target.value })}
+                className="px-3 py-1.5 rounded-full text-[13px] border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
+              />
+              <span className="text-muted-foreground text-sm">–</span>
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value })}
+                className="px-3 py-1.5 rounded-full text-[13px] border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
+              />
+            </div>
           )}
-          <ChevronDown size={14} className={`transition-transform ${mobileOpen ? "rotate-180" : ""}`} />
-        </button>
-        {activeCount > 0 && (
-          <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground">
-            Clear
+        </div>
+
+        {/* Right side: Mobile toggle & Clear All */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="sm:hidden flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card text-[13px] font-medium text-foreground hover:bg-muted/30 transition-colors"
+          >
+            <Filter size={14} />
+            Filters {activeCount > 0 && `(${activeCount})`}
           </button>
-        )}
+
+          {activeCount > 0 && (
+            <button
+              onClick={clearAll}
+              className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors group"
+            >
+              <X size={14} className="group-hover:scale-110 transition-transform" />
+              Clear Filters
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className={`sm:block ${mobileOpen ? "block" : "hidden"}`}>
-        <FilterContent />
+      {/* Bottom Row: Multi-select Dropdowns */}
+      <div className={`sm:flex flex-wrap items-center gap-2 ${mobileOpen ? "flex" : "hidden"}`}>
+        <div className="hidden sm:flex items-center pr-2 text-muted-foreground">
+          <Filter size={15} />
+        </div>
+        <MultiSelect
+          id="filter-po"
+          label="PO Number"
+          options={uniqueVals.poNumbers}
+          selected={filters.poNumbers}
+          onChange={(v) => onFiltersChange({ ...filters, poNumbers: v })}
+        />
+        <MultiSelect
+          id="filter-design"
+          label="Design Name"
+          options={uniqueVals.designNames}
+          selected={filters.designNames}
+          onChange={(v) => onFiltersChange({ ...filters, designNames: v })}
+        />
+        <MultiSelect
+          id="filter-color"
+          label="Yarn Color"
+          options={uniqueVals.yarnColors}
+          selected={filters.yarnColors}
+          onChange={(v) => onFiltersChange({ ...filters, yarnColors: v })}
+        />
+        <MultiSelect
+          id="filter-karigar"
+          label="Karigar"
+          options={uniqueVals.karigarNames}
+          selected={filters.karigarNames}
+          onChange={(v) => onFiltersChange({ ...filters, karigarNames: v })}
+        />
       </div>
     </div>
   );

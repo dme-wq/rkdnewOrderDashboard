@@ -5,8 +5,8 @@
 // Ye Google ko permission deta hai Sheet access karne ki.
 // ============================================
 
-const SHEET_ID = "1CnKwG2L_nslYXThzRxtiWaD3ixIIPvi0sMR3mQnQscA";
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/1CnKwG2L_nslYXThzRxtiWaD3ixIIPvi0sMR3mQnQscA/edit";
+const SHEET_ID = "1CnKwG2L_nslYXThzRxtiWaD3ixIlPvi0sMR3mQnQscA";
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1CnKwG2L_nslYXThzRxtiWaD3ixIlPvi0sMR3mQnQscA/edit";
 const DATA_ENTRY_TAB = "Data Entry";
 const PRODUCTION_MASTER_TAB = "Production Master";
 
