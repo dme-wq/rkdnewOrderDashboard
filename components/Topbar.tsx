@@ -150,9 +150,9 @@ export function Topbar({
             color: "#fff",
             cursor: "pointer",
           }}
-          title="RKD Admin"
+          title="RKD Furnishings Pvt. Ltd."
         >
-          RK
+          RKD
         </div>
       </div>
     </div>

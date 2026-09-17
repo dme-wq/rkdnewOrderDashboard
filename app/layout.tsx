@@ -3,10 +3,10 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Karigar Production Dashboard — RKD Bathmat Tufting",
+  title: "Karigar Production Dashboard — RKD Furnishings Pvt. Ltd.",
   description:
-    "Live production tracker for RKD Bathmat Tufting. Monitor karigar output daily, weekly, monthly, and quarterly.",
-  keywords: ["karigar", "production", "bathmat", "tufting", "dashboard", "rkd"],
+    "Live production tracker for RKD Furnishings Private Limited — Bathmat Tufting. Monitor karigar output daily, weekly, monthly, and quarterly.",
+  keywords: ["karigar", "production", "bathmat", "tufting", "dashboard", "rkd", "furnishings"],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -15,9 +15,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Inter font via link tag — avoids CSS @import conflict with Tailwind v4 */}
+        {/* Plus Jakarta Sans — premium modern font */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
       </head>

@@ -10,7 +10,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 55 * 1000, // 55 seconds
+            staleTime: 55 * 1000,
             retry: 2,
             retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
           },
@@ -19,7 +19,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    // defaultTheme="light" — light theme as default
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </ThemeProvider>
   );

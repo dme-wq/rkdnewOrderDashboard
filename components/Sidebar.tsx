@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import Image from "next/image";
 
 const NAV_ITEMS = [
   {
@@ -48,29 +49,83 @@ export function Sidebar() {
     <>
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="flex items-center gap-2.5">
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* RKD Logo Image */}
           <div
             style={{
-              width: 34,
-              height: 34,
+              width: 44,
+              height: 44,
               borderRadius: 10,
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              background: "#ffffff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(99,102,241,0.4)",
+              flexShrink: 0,
+              overflow: "hidden",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              padding: 2,
             }}
           >
-            <Factory size={18} color="#fff" />
+            <Image
+              src="https://static.wixstatic.com/media/68b92a_d71e34133826499983234774dea1945b~mv2.png/v1/fill/w_186,h_156,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/RKD-Logo.png"
+              alt="RKD Furnishings Logo"
+              width={40}
+              height={34}
+              style={{ objectFit: "contain", width: "100%", height: "100%" }}
+              priority
+              unoptimized
+            />
           </div>
+          {/* Company name */}
           <div>
-            <div style={{ color: "#fff", fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>
-              RKD Tufting
+            <div
+              style={{
+                color: "#ffffff",
+                fontWeight: 800,
+                fontSize: 13.5,
+                lineHeight: 1.2,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              RKD Furnishings
             </div>
-            <div style={{ color: "#8892b0", fontSize: 10, fontWeight: 500 }}>
-              Production Dashboard
+            <div
+              style={{
+                color: "#64748b",
+                fontSize: 10,
+                fontWeight: 500,
+                marginTop: 2,
+                lineHeight: 1.2,
+              }}
+            >
+              Private Limited
             </div>
           </div>
+        </div>
+
+        {/* Divider with subtitle */}
+        <div
+          style={{
+            marginTop: 14,
+            paddingTop: 12,
+            borderTop: "1px solid rgba(255,255,255,0.07)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <div
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: "#10b981",
+              boxShadow: "0 0 6px rgba(16,185,129,0.6)",
+            }}
+          />
+          <span style={{ color: "#475569", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.04em" }}>
+            Production Dashboard
+          </span>
         </div>
       </div>
 
@@ -88,9 +143,9 @@ export function Sidebar() {
                   className={`sidebar-item ${active ? "active" : ""}`}
                   onClick={() => setMobileOpen(false)}
                 >
-                  <Icon size={16} />
+                  <Icon size={15} />
                   <span style={{ flex: 1 }}>{label}</span>
-                  {active && <ChevronRight size={13} />}
+                  {active && <ChevronRight size={12} style={{ opacity: 0.6 }} />}
                 </Link>
               );
             })}
@@ -99,9 +154,14 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <div className="sidebar-item" style={{ borderRadius: 8, padding: "8px 12px" }}>
-          <LogOut size={15} />
+      <div
+        style={{
+          padding: "12px 16px",
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        <div className="sidebar-item" style={{ margin: 0, borderRadius: 8, padding: "8px 12px" }}>
+          <LogOut size={14} />
           <span style={{ fontSize: 13 }}>Logout</span>
         </div>
       </div>
@@ -114,6 +174,7 @@ export function Sidebar() {
       <button
         id="mobile-menu-toggle"
         onClick={() => setMobileOpen(!mobileOpen)}
+        className="mobile-hamburger"
         style={{
           display: "none",
           position: "fixed",
@@ -126,13 +187,14 @@ export function Sidebar() {
           padding: 8,
           cursor: "pointer",
           color: "#fff",
+          alignItems: "center",
+          justifyContent: "center",
         }}
-        className="mobile-hamburger"
       >
         {mobileOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
-      {/* Overlay */}
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
