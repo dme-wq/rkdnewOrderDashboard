@@ -15,8 +15,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Inter font via link tag — avoids CSS @import conflict with Tailwind v4 */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
       </head>
-      <body style={{ fontFamily: "'Inter', sans-serif" }}>
+      <body>
         <Providers>{children}</Providers>
       </body>
     </html>
