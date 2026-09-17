@@ -56,6 +56,17 @@ function SortIcon({ dir }: { dir: SortDir }) {
   return <ChevronsUpDown size={13} className="text-muted-foreground/30 group-hover:text-muted-foreground/70 transition-colors" />;
 }
 
+function formatDate(dateStr: string) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = months[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
 // ── Smart Column Filter ──────────────────────────────────────────────────────
 
 interface SmartFilterProps {
@@ -390,6 +401,16 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
             <tr>
               <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-12 border-b border-border/50">#</th>
               
+              {/* Date */}
+              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 group select-none">
+                <div className="flex items-center gap-1.5">
+                  <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Date")}>
+                    Date
+                  </span>
+                  <SortIcon dir={sortKey === "Date" ? sortDir : "none"} />
+                </div>
+              </th>
+
               {/* PO Number */}
               <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 group select-none">
                 <div className="flex items-center gap-1.5">
@@ -442,22 +463,6 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                   Daily Δ
                 </div>
               </th>
-
-              {/* Cumulative */}
-              <th className="px-5 py-4 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 cursor-pointer hover:text-foreground group select-none" onClick={() => handleSort("Total Production")}>
-                <div className="flex items-center justify-end gap-1.5">
-                  <SortIcon dir={sortKey === "Total Production" ? sortDir : "none"} />
-                  Cumulative
-                </div>
-              </th>
-
-              {/* Progress */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 cursor-pointer hover:text-foreground group select-none" onClick={() => handleSort("poProgress")}>
-                <div className="flex items-center gap-1.5">
-                  Progress
-                  <SortIcon dir={sortKey === "poProgress" ? sortDir : "none"} />
-                </div>
-              </th>
             </tr>
           </thead>
           
@@ -494,6 +499,13 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                 >
                   <td className="px-5 py-3.5 text-[13px] text-muted-foreground tabular-nums border-b border-transparent group-hover:border-border/30">
                     {(page - 1) * pageSize + idx + 1}
+                  </td>
+                  
+                  {/* Date */}
+                  <td className="px-5 py-3.5 align-middle">
+                    <span className="text-[13px] font-medium text-foreground whitespace-nowrap">
+                      {formatDate(row.Date)}
+                    </span>
                   </td>
                   
                   {/* PO */}
@@ -542,35 +554,6 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                     <div className={`inline-flex items-center gap-1 text-[13.5px] font-bold tabular-nums px-2 py-0.5 rounded-md ${row.dailyPiecesMade > 0 ? "bg-emerald-500/10 text-emerald-500" : "text-muted-foreground"}`}>
                       {row.dailyPiecesMade > 0 && <ChevronUp size={12} strokeWidth={3} />}
                       {row.dailyPiecesMade > 0 ? row.dailyPiecesMade : "-"}
-                    </div>
-                  </td>
-
-                  {/* Cumulative */}
-                  <td className="px-5 py-3.5 align-middle text-right">
-                    <span className="text-[14px] font-bold text-foreground tabular-nums">
-                      {row.totalProductionNum.toLocaleString()}
-                    </span>
-                  </td>
-
-                  {/* Progress */}
-                  <td className="px-5 py-3.5 align-middle w-40">
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-bold text-foreground tabular-nums">{row.poProgress}%</span>
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{row.poTarget.toLocaleString()} Target</span>
-                      </div>
-                      <div className="h-1.5 bg-muted/80 rounded-full overflow-hidden border border-border/40 shadow-inner">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ease-out ${
-                            row.poProgress >= 100
-                              ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                              : row.poProgress >= 75
-                              ? "bg-gradient-to-r from-amber-400 to-amber-500"
-                              : "bg-gradient-to-r from-primary to-violet-500"
-                          }`}
-                          style={{ width: `${Math.min(row.poProgress, 100)}%` }}
-                        />
-                      </div>
                     </div>
                   </td>
                 </tr>
