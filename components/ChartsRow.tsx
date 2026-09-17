@@ -72,7 +72,7 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
   );
 
   const barData = stats.dailyTrend.map((d) => ({
-    date: d.date.slice(5),
+    date: d.date, // User requested full dd-MMM-yyyy on the chart
     total: d.totalPieces,
     ...d.byKarigar,
   }));

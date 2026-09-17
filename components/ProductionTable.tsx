@@ -57,14 +57,8 @@ function SortIcon({ dir }: { dir: SortDir }) {
 }
 
 function formatDate(dateStr: string) {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = months[d.getMonth()];
-  const year = d.getFullYear();
-  return `${day}-${month}-${year}`;
+  // Dates are already formatted as dd-MMM-yyyy in lib/transform.ts
+  return dateStr;
 }
 
 // ── Smart Column Filter ──────────────────────────────────────────────────────
@@ -283,6 +277,11 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
     filters.dateFrom ? 1 : 0,
     search.trim() ? 1 : 0
   ].reduce((a, b) => a + b, 0);
+
+  // Calculate Grand Total for the current filtered (and searched) rows
+  const grandTotal = useMemo(() => {
+    return searchedRows.reduce((sum, row) => sum + row.dailyPiecesMade, 0);
+  }, [searchedRows]);
 
 
   return (
@@ -561,6 +560,22 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                 </tr>
               ))}
           </tbody>
+          
+          {/* ── Grand Total Footer ── */}
+          {!isLoading && paginatedRows.length > 0 && (
+            <tfoot className="bg-gray-50/80 sticky bottom-0 z-10 border-t border-gray-200 shadow-[0_-1px_2px_rgba(0,0,0,0.02)] font-semibold text-gray-900">
+              <tr>
+                <td colSpan={7} className="px-5 py-3 text-right text-[13px] tracking-wide">
+                  GRAND TOTAL:
+                </td>
+                <td className="pl-5 pr-12 py-3 text-right text-[14px] tabular-nums">
+                  <div className="inline-flex items-center gap-1.5 text-blue-700">
+                    {grandTotal.toLocaleString()}
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 

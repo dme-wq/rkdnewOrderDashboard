@@ -55,9 +55,8 @@ function safeParseDate(dateStr: string): Date | null {
 }
 
 // ─── Step 1: Compute daily deltas ─────────────────────────────────────────────
-// Total Production in dataEntry is a cumulative running counter per
-// (Karigar + Natural Product Code) combination. This function converts it
-// to actual daily pieces made.
+// The Karigar Account (Pieces) column contains the actual daily pieces made.
+// We map it directly rather than trying to compute a delta from Total Production.
 
 export function computeDailyDelta(
   rows: DataEntryRow[],
@@ -72,49 +71,36 @@ export function computeDailyDelta(
     }
   }
 
-  // Group by (Karigar + Natural Product Code)
-  const groups = new Map<string, DataEntryRow[]>();
-  for (const row of rows) {
-    const karigar = row["Name of Karigar 1"]?.trim() ?? "";
-    const product = row["Natural Product Code"]?.trim() ?? "";
-    const key = `${karigar}||${product}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(row);
-  }
-
-  // Sort each group by Date (then by original order — rows already ordered)
   const processed: ProcessedRow[] = [];
-  for (const [, groupRows] of groups) {
-    const sorted = [...groupRows].sort((a, b) => {
-      const da = safeParseDate(a.Date);
-      const db = safeParseDate(b.Date);
-      if (!da || !db) return 0;
-      return da.getTime() - db.getTime();
-    });
+  for (const row of rows) {
+    const currentTotal = safeParseNum(row["Total Production"]);
+    // Use the explicit Karigar Account column as requested for the daily pieces
+    const dailyPiecesMade = safeParseNum(row["Karigar Account (Pieces)"]);
 
-    let prevTotal = 0;
-    for (let i = 0; i < sorted.length; i++) {
-      const row = sorted[i];
-      const currentTotal = safeParseNum(row["Total Production"]);
-      const dailyPiecesMade = i === 0 ? currentTotal : Math.max(0, currentTotal - prevTotal);
-      prevTotal = currentTotal;
+    const product = row["Natural Product Code"]?.trim() ?? "";
+    const poTarget = poTargetMap.get(product) ?? 0;
+    const poProgress = poTarget > 0 ? Math.min(100, (currentTotal / poTarget) * 100) : 0;
 
-      const product = row["Natural Product Code"]?.trim() ?? "";
-      const poTarget = poTargetMap.get(product) ?? 0;
-      // For progress we use the max total in this group up to this point
-      const poProgress = poTarget > 0 ? Math.min(100, (currentTotal / poTarget) * 100) : 0;
-
-      processed.push({
-        ...row,
-        karigarInfo: parseKarigar(row["Name of Karigar 1"] ?? ""),
-        dailyPiecesMade,
-        totalProductionNum: currentTotal,
-        poProgress: Math.round(poProgress * 10) / 10,
-        poTarget,
-      });
+    let rowDateStr = row.Date;
+    // Standardize row.Date format to dd-MMM-yyyy if it is a valid date
+    const parsedD = safeParseDate(row.Date);
+    if (parsedD) {
+      rowDateStr = format(parsedD, "dd-MMM-yyyy");
     }
+
+    processed.push({
+      ...row,
+      Date: rowDateStr, // Override Date with the standardized format
+      karigarInfo: parseKarigar(row["Name of Karigar 1"] ?? ""),
+      dailyPiecesMade,
+      totalProductionNum: currentTotal,
+      poProgress: Math.round(poProgress * 10) / 10,
+      poTarget,
+    });
   }
 
+  // Sort overall processed by Date (descending or ascending) if needed, 
+  // but they are usually chronological from the sheet.
   return processed;
 }
 
@@ -153,11 +139,11 @@ export function applyFilters(
 // ─── Step 3: Aggregate by period ──────────────────────────────────────────────
 
 function getTodayStr(): string {
-  return format(new Date(), "yyyy-MM-dd");
+  return format(new Date(), "dd-MMM-yyyy");
 }
 
 function getYesterdayStr(): string {
-  return format(subDays(new Date(), 1), "yyyy-MM-dd");
+  return format(subDays(new Date(), 1), "dd-MMM-yyyy");
 }
 
 export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
@@ -192,7 +178,7 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
   // Daily trend (last 14 days)
   const dailyMap = new Map<string, { total: number; byKarigar: Record<string, number> }>();
   for (let i = 13; i >= 0; i--) {
-    const d = format(subDays(now, i), "yyyy-MM-dd");
+    const d = format(subDays(now, i), "dd-MMM-yyyy");
     dailyMap.set(d, { total: 0, byKarigar: {} });
   }
 
@@ -259,6 +245,8 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     if (isWithinInterval(rowDate, { start: lastQuarterStart, end: lastQuarterEnd })) lastQuarterPieces += pieces;
 
     // Daily trend
+    // If the Date from row matches our formatted dd-MMM-yyyy, or if we can parse it
+    // Wait, row.Date is already normalized to dd-MMM-yyyy by computeDailyDelta!
     if (dailyMap.has(dateStr)) {
       const entry = dailyMap.get(dateStr)!;
       entry.total += pieces;
