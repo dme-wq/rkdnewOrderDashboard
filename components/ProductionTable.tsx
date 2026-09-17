@@ -396,14 +396,14 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       )}
 
       {/* ── Modern Table ── */}
-      <div className="overflow-x-auto relative w-full flex-1">
-        <table className="w-full text-sm border-collapse min-w-[900px]">
+      <div className="overflow-auto relative w-full flex-1 max-h-[500px]">
+        <table className="w-full text-sm border-collapse min-w-[1100px]">
           <thead className="bg-card/90 sticky top-0 z-10 backdrop-blur-xl border-b border-border/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
             <tr>
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-12 border-b border-border/50">#</th>
+              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-16 border-b border-border/50">#</th>
               
               {/* Date */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 group select-none">
+              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-32 border-b border-border/50 group select-none">
                 <div className="flex items-center gap-1.5">
                   <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Date")}>
                     Date
@@ -413,7 +413,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* PO Number */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 group select-none">
+              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-36 border-b border-border/50 group select-none">
                 <div className="flex items-center gap-1.5">
                   <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Buyer PO Number")}>
                     PO Number
@@ -423,7 +423,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* Design */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 group select-none">
+              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider min-w-[200px] border-b border-border/50 group select-none">
                 <div className="flex items-center gap-1.5">
                   <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Design Name")}>
                     Design
@@ -433,7 +433,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* Color */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 group select-none">
+              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-32 border-b border-border/50 group select-none">
                 <div className="flex items-center gap-1.5">
                   <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Yarn Color")}>
                     Color
@@ -443,12 +443,12 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* Size */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50">
+              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-32 border-b border-border/50">
                 Size
               </th>
 
               {/* Karigar */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 group select-none">
+              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider min-w-[180px] border-b border-border/50 group select-none">
                 <div className="flex items-center gap-1.5">
                   <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Name of Karigar 1")}>
                     Karigar
@@ -458,7 +458,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* Daily Delta */}
-              <th className="px-5 py-4 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 cursor-pointer hover:text-foreground group select-none" onClick={() => handleSort("dailyPiecesMade")}>
+              <th className="px-5 py-4 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-32 border-b border-border/50 cursor-pointer hover:text-foreground group select-none pr-8" onClick={() => handleSort("dailyPiecesMade")}>
                 <div className="flex items-center justify-end gap-1.5">
                   <SortIcon dir={sortKey === "dailyPiecesMade" ? sortDir : "none"} />
                   Daily Δ
@@ -551,7 +551,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                   </td>
                   
                   {/* Daily Delta */}
-                  <td className="px-5 py-3.5 align-middle text-right">
+                  <td className="px-5 py-3.5 align-middle text-right pr-8">
                     <div className={`inline-flex items-center gap-1 text-[13.5px] font-bold tabular-nums px-2 py-0.5 rounded-md ${row.dailyPiecesMade > 0 ? "bg-emerald-500/10 text-emerald-500" : "text-muted-foreground"}`}>
                       {row.dailyPiecesMade > 0 && <ChevronUp size={12} strokeWidth={3} />}
                       {row.dailyPiecesMade > 0 ? row.dailyPiecesMade : "-"}
