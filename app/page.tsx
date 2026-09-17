@@ -8,7 +8,7 @@ import { Topbar } from "@/components/Topbar";
 import { StatCards } from "@/components/StatCards";
 import { KarigarRanking } from "@/components/KarigarRanking";
 import { ChartsRow } from "@/components/ChartsRow";
-import { FilterBar } from "@/components/FilterBar";
+
 import { ProductionTable } from "@/components/ProductionTable";
 import { AlertTriangle, RefreshCw, Database } from "lucide-react";
 
@@ -147,34 +147,15 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Filters + Table */}
+          {/* Table */}
           <div style={{ marginTop: 20 }}>
-            <div
-              style={{
-                background: "var(--bg-card)",
-                borderRadius: 12,
-                border: "1px solid var(--border)",
-                padding: "12px 16px",
-                marginBottom: 16,
-              }}
-            >
-              <FilterBar rows={processedRows} filters={filters} onFiltersChange={setFilters} />
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
-                  Production Records
-                </div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                  {filteredRows.length.toLocaleString()} records
-                  {filteredRows.length !== processedRows.length &&
-                    ` (filtered from ${processedRows.length.toLocaleString()})`}
-                </div>
-              </div>
-            </div>
-
-            <ProductionTable rows={filteredRows} isLoading={isLoading && !data} />
+            <ProductionTable
+              rows={filteredRows}
+              allRows={processedRows}
+              filters={filters}
+              onFiltersChange={setFilters}
+              isLoading={isLoading && !data}
+            />
           </div>
 
           <div style={{ height: 32 }} />
