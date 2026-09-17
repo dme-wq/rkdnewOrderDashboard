@@ -53,7 +53,7 @@ function SkeletonRow() {
 function SortIcon({ dir }: { dir: SortDir }) {
   if (dir === "asc") return <ChevronUp size={13} className="text-primary" />;
   if (dir === "desc") return <ChevronDown size={13} className="text-primary" />;
-  return <ChevronsUpDown size={13} className="text-muted-foreground/30 group-hover:text-muted-foreground/70 transition-colors" />;
+  return <ChevronsUpDown size={13} className="text-gray-300 group-hover:text-gray-500 transition-colors" />;
 }
 
 function formatDate(dateStr: string) {
@@ -99,10 +99,10 @@ function SmartFilter({ label, options, selected, onChange }: SmartFilterProps) {
     <div ref={ref} className="relative inline-flex items-center">
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all border shadow-sm ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all border ${
           isActive || open 
-            ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-primary/50 shadow-primary/20" 
-            : "bg-card/80 backdrop-blur-sm text-muted-foreground border-border hover:border-primary/30 hover:bg-muted/50 hover:text-foreground"
+            ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm" 
+            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
         }`}
       >
         {label}
@@ -117,7 +117,7 @@ function SmartFilter({ label, options, selected, onChange }: SmartFilterProps) {
       {open && (
         <div
           className="absolute top-full mt-2 left-0 z-[100] min-w-[200px] max-h-64 overflow-y-auto
-          rounded-xl border border-border bg-card shadow-xl shadow-black/5 py-1.5 animate-in fade-in slide-in-from-top-1
+          rounded-xl border border-gray-200 bg-white shadow-lg py-1.5 animate-in fade-in slide-in-from-top-1
           cursor-default font-normal text-[13px] tracking-normal normal-case"
           onClick={(e) => e.stopPropagation()}
         >
@@ -286,11 +286,10 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
 
   return (
-    <div className="relative rounded-2xl bg-gradient-to-br from-primary/30 via-border/50 to-primary/10 p-[1px] shadow-lg shadow-black/5 mb-6">
-      <div className="rounded-[15px] bg-card overflow-hidden flex flex-col w-full">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col w-full overflow-hidden mb-6">
       
       {/* ── Modern Unified Toolbar ── */}
-      <div className="p-4 border-b border-border bg-card/60 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between z-20 relative">
+      <div className="p-4 border-b border-gray-100 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between z-20 relative bg-white">
         
         {/* Left: Search & Global Actions */}
         <div className="flex flex-1 items-center gap-3">
@@ -301,8 +300,8 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Search PO, Design, Karigar..."
-              className="w-full pl-9 pr-4 py-2.5 text-[13.5px] rounded-xl border border-border bg-muted/30 text-foreground
-                placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all shadow-sm"
+              className="w-full pl-9 pr-4 py-2.5 text-[13px] rounded-lg border border-gray-200 bg-white text-gray-900
+                placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all shadow-sm"
             />
           </div>
           
@@ -318,16 +317,16 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
         {/* Right: Date Presets & Export */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center p-1 bg-muted/40 rounded-xl border border-border gap-1 overflow-x-auto max-w-[280px] sm:max-w-full hide-scrollbar">
+          <div className="flex items-center p-1 bg-gray-100/80 rounded-lg border border-gray-200/60 gap-1 overflow-x-auto max-w-[280px] sm:max-w-full hide-scrollbar">
             <Calendar size={13} className="text-muted-foreground/70 mx-2 flex-shrink-0" />
             {DATE_PRESETS.map((p) => (
               <button
                 key={p.value}
                 onClick={() => applyPreset(p.value)}
-                className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all outline-none whitespace-nowrap flex-shrink-0 ${
+                className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all outline-none whitespace-nowrap flex-shrink-0 ${
                   activePreset === p.value
-                    ? "bg-card text-foreground shadow-sm shadow-black/5"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    ? "bg-white text-gray-900 shadow-sm border border-gray-200/50"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
                 }`}
               >
                 {p.label}
@@ -338,7 +337,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
           <button
             onClick={() => exportToCSV(sortedRows)}
             disabled={sortedRows.length === 0}
-            className="flex items-center justify-center w-10 h-10 rounded-xl border border-border bg-card shadow-sm text-muted-foreground hover:text-foreground hover:border-primary/40 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50"
+            className="flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 bg-white shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 focus:ring-2 focus:ring-blue-100 transition-all disabled:opacity-50"
             title="Export CSV"
           >
             <Download size={16} />
@@ -347,9 +346,9 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       </div>
       
       {/* ── Smart Dynamic Dependent Filters (Above Table) ── */}
-      <div className="px-5 py-3.5 bg-muted/20 border-b border-border flex flex-wrap items-center gap-2.5">
-        <div className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground mr-2 bg-card px-3 py-1.5 rounded-full border border-border shadow-sm">
-          <Filter size={14} className="text-primary" /> Filters
+      <div className="px-5 py-3 bg-white border-b border-gray-100 flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-600 mr-2 bg-white px-3 py-1.5 rounded-md border border-gray-200 shadow-sm">
+          <Filter size={14} className="text-gray-500" /> Filters
         </div>
         <SmartFilter
           label="PO Number"
@@ -379,20 +378,20 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
       {/* ── Custom Date Picker (if active) ── */}
       {activePreset === "custom" && (
-        <div className="px-5 py-3 border-b border-border bg-muted/20 flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200">
+        <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200">
           <span className="text-[13px] font-medium text-muted-foreground">Select Range:</span>
           <input
             type="date"
             value={filters.dateFrom}
             onChange={(e) => onFiltersChange({ ...filters, dateFrom: e.target.value })}
-            className="px-3 py-1.5 rounded-lg text-[13px] border border-border bg-card shadow-sm text-foreground focus:outline-none focus:border-primary/50"
+            className="px-3 py-1.5 rounded-md text-[13px] border border-gray-200 bg-white shadow-sm text-gray-900 focus:outline-none focus:border-blue-400"
           />
           <span className="text-muted-foreground text-sm">–</span>
           <input
             type="date"
             value={filters.dateTo}
             onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value })}
-            className="px-3 py-1.5 rounded-lg text-[13px] border border-border bg-card shadow-sm text-foreground focus:outline-none focus:border-primary/50"
+            className="px-3 py-1.5 rounded-md text-[13px] border border-gray-200 bg-white shadow-sm text-gray-900 focus:outline-none focus:border-blue-400"
           />
         </div>
       )}
@@ -400,12 +399,12 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       {/* ── Modern Table ── */}
       <div className="overflow-auto relative w-full flex-1 max-h-[500px]">
         <table className="w-full text-sm border-collapse min-w-[1100px]">
-          <thead className="bg-card/90 sticky top-0 z-10 backdrop-blur-xl border-b border-border/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <thead className="bg-white sticky top-0 z-10 border-b border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
             <tr>
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-16 border-b border-border/50">#</th>
+              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-16 ">#</th>
               
               {/* Date */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-32 border-b border-border/50 group select-none">
+              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-32  group select-none">
                 <div className="flex items-center gap-1.5">
                   <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Date")}>
                     Date
@@ -415,7 +414,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* PO Number */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-36 border-b border-border/50 group select-none">
+              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36  group select-none">
                 <div className="flex items-center gap-1.5">
                   <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Buyer PO Number")}>
                     PO Number
@@ -425,7 +424,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* Design */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider min-w-[200px] border-b border-border/50 group select-none">
+              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider min-w-[200px]  group select-none">
                 <div className="flex items-center gap-1.5">
                   <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Design Name")}>
                     Design
@@ -435,7 +434,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* Color */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-32 border-b border-border/50 group select-none">
+              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-32  group select-none">
                 <div className="flex items-center gap-1.5">
                   <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Yarn Color")}>
                     Color
@@ -445,12 +444,12 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* Size */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-32 border-b border-border/50">
+              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-32 ">
                 Size
               </th>
 
               {/* Karigar */}
-              <th className="px-5 py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider min-w-[180px] border-b border-border/50 group select-none">
+              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider min-w-[180px]  group select-none">
                 <div className="flex items-center gap-1.5">
                   <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Name of Karigar 1")}>
                     Karigar
@@ -460,7 +459,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* Daily Delta */}
-              <th className="pl-5 pr-12 py-4 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider min-w-[140px] border-b border-border/50 cursor-pointer hover:text-foreground group select-none" onClick={() => handleSort("dailyPiecesMade")}>
+              <th className="pl-5 pr-12 py-4 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider min-w-[140px] border-b border-border/50 cursor-pointer hover:text-foreground group select-none" onClick={() => handleSort("dailyPiecesMade")}>
                 <div className="flex items-center justify-end gap-1.5">
                   <SortIcon dir={sortKey === "dailyPiecesMade" ? sortDir : "none"} />
                   Daily Δ
@@ -469,7 +468,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
             </tr>
           </thead>
           
-          <tbody className="divide-y divide-border/40">
+          <tbody className="bg-white">
             {isLoading &&
               Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
 
@@ -498,33 +497,33 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               paginatedRows.map((row, idx) => (
                 <tr
                   key={`${row["Buyer PO Number"]}-${row.karigarInfo.fullRaw}-${row.Date}-${idx}`}
-                  className="group transition-colors hover:bg-muted/40"
+                  className="group transition-colors hover:bg-gray-50/80 border-b border-gray-100 last:border-0"
                 >
-                  <td className="px-5 py-3.5 text-[13px] text-muted-foreground tabular-nums border-b border-transparent group-hover:border-border/30">
+                  <td className="px-5 py-4 text-[13px] text-gray-500 tabular-nums">
                     {(page - 1) * pageSize + idx + 1}
                   </td>
                   
                   {/* Date */}
-                  <td className="px-5 py-3.5 align-middle">
-                    <span className="text-[13px] font-medium text-foreground whitespace-nowrap">
+                  <td className="px-5 py-4 align-middle">
+                    <span className="text-[13px] font-medium text-gray-800 whitespace-nowrap">
                       {formatDate(row.Date)}
                     </span>
                   </td>
                   
                   {/* PO */}
-                  <td className="px-5 py-3.5 align-middle">
-                    <span className="font-mono text-[12.5px] font-medium bg-muted/80 border border-border/50 px-2 py-1 rounded-md text-foreground shadow-sm shadow-black/5">
+                  <td className="px-5 py-4 align-middle">
+                    <span className="text-[13px] font-medium text-gray-900">
                       {row["Buyer PO Number"]}
                     </span>
                   </td>
                   
                   {/* Design */}
-                  <td className="px-5 py-3.5 align-middle max-w-[140px]">
-                    <span className="text-[13.5px] font-medium text-foreground truncate block">{row["Design Name"]}</span>
+                  <td className="px-5 py-4 align-middle max-w-[140px]">
+                    <span className="text-[13.5px] font-medium text-gray-900 truncate block">{row["Design Name"]}</span>
                   </td>
                   
                   {/* Color */}
-                  <td className="px-5 py-3.5 align-middle">
+                  <td className="px-5 py-4 align-middle">
                     <div className="flex items-center gap-2">
                       <div
                         className="w-3.5 h-3.5 rounded-full border border-border/80 flex-shrink-0 shadow-inner"
@@ -535,26 +534,26 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                   </td>
                   
                   {/* Size */}
-                  <td className="px-5 py-3.5 align-middle">
-                    <span className="text-[12px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/50">{row.Size}</span>
+                  <td className="px-5 py-4 align-middle">
+                    <span className="text-[12px] font-medium text-gray-600 bg-gray-100/80 px-2.5 py-1 rounded-md">{row.Size}</span>
                   </td>
                   
                   {/* Karigar */}
-                  <td className="px-5 py-3.5 align-middle">
+                  <td className="px-5 py-4 align-middle">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold uppercase">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[11px] font-bold uppercase shrink-0">
                         {row.karigarInfo.name.substring(0,2)}
                       </div>
                       <div>
-                        <p className="text-[13.5px] font-medium text-foreground leading-tight">{row.karigarInfo.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{row.karigarInfo.phone}</p>
+                        <p className="text-[13.5px] font-medium text-gray-900 leading-tight">{row.karigarInfo.name}</p>
+                        <p className="text-[11px] text-gray-500">{row.karigarInfo.phone}</p>
                       </div>
                     </div>
                   </td>
                   
                   {/* Daily Delta */}
-                  <td className="pl-5 pr-12 py-3.5 align-middle text-right">
-                    <div className={`inline-flex items-center gap-1 text-[13.5px] font-bold tabular-nums px-2 py-0.5 rounded-md ${row.dailyPiecesMade > 0 ? "bg-emerald-500/10 text-emerald-500" : "text-muted-foreground"}`}>
+                  <td className="pl-5 pr-12 py-4 align-middle text-right">
+                    <div className={`inline-flex items-center gap-1 text-[12px] font-bold tabular-nums px-2.5 py-1 rounded-full border ${row.dailyPiecesMade > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-gray-50 text-gray-500 border-gray-100"}`}>
                       {row.dailyPiecesMade > 0 && <ChevronUp size={12} strokeWidth={3} />}
                       {row.dailyPiecesMade > 0 ? row.dailyPiecesMade : "-"}
                     </div>
@@ -567,16 +566,16 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
       {/* ── Modern Pagination ── */}
       {totalPages > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 border-t border-border bg-card/60 gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-4 border-t border-gray-200 bg-white gap-4">
           
           <div className="flex items-center gap-3">
-            <span className="text-[13px] text-muted-foreground">
-              Showing <span className="font-semibold text-foreground">{(page - 1) * pageSize + 1}</span> to <span className="font-semibold text-foreground">{Math.min(page * pageSize, sortedRows.length)}</span> of <span className="font-semibold text-foreground">{sortedRows.length}</span>
+            <span className="text-[13px] text-gray-500">
+              Showing <span className="font-semibold text-gray-900">{(page - 1) * pageSize + 1}</span> to <span className="font-semibold text-gray-900">{Math.min(page * pageSize, sortedRows.length)}</span> of <span className="font-semibold text-gray-900">{sortedRows.length}</span>
             </span>
             <select
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-              className="text-[12px] font-medium border border-border bg-muted/40 text-foreground rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all hover:bg-muted"
+              className="text-[12px] font-medium border border-gray-200 bg-white text-gray-700 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all hover:bg-gray-50"
             >
               {PAGE_SIZES.map((s) => (
                 <option key={s} value={s}>{s} / page</option>
@@ -584,11 +583,11 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
             </select>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-muted/30 p-1 rounded-xl border border-border">
+          <div className="flex items-center gap-1.5 bg-white">
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page === 1}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-card hover:shadow-sm disabled:opacity-30 transition-all"
+              className="w-8 h-8 rounded-md flex items-center justify-center text-gray-500 hover:text-gray-900 border border-transparent hover:border-gray-200 hover:bg-gray-50 disabled:opacity-30 transition-all"
             >
               <ArrowLeft size={14} />
             </button>
@@ -603,10 +602,10 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`w-8 h-8 rounded-lg text-[13px] font-semibold transition-all ${
+                  className={`w-8 h-8 rounded-md text-[13px] font-semibold transition-all border ${
                     p === page
-                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card hover:shadow-sm"
+                      ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                      : "bg-white text-gray-600 border-transparent hover:border-gray-200 hover:bg-gray-50"
                   }`}
                 >
                   {p}
@@ -616,14 +615,13 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
             <button
               onClick={() => setPage(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-card hover:shadow-sm disabled:opacity-30 transition-all"
+              className="w-8 h-8 rounded-md flex items-center justify-center text-gray-500 hover:text-gray-900 border border-transparent hover:border-gray-200 hover:bg-gray-50 disabled:opacity-30 transition-all"
             >
               <ArrowRight size={14} />
             </button>
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
