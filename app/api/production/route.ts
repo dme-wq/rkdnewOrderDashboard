@@ -15,8 +15,12 @@ export async function GET() {
   }
 
   try {
+    // Append timestamp to bypass Google Apps Script 302 caching
+    const targetUrl = new URL(APPS_SCRIPT_URL);
+    targetUrl.searchParams.append("t", Date.now().toString());
+
     // Follow redirects (important for Workspace-domain Google Apps Script URLs)
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(targetUrl.toString(), {
       cache: "no-store",
       redirect: "follow",
       headers: {
