@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 
 const APPS_SCRIPT_URL = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || "";
 
-// Force dynamic rendering to completely disable caching for real-time updates
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Re-enabled 30-second caching for faster loading while keeping data reasonably fresh
+export const revalidate = 30;
 
 export async function GET() {
   if (!APPS_SCRIPT_URL) {
@@ -17,11 +16,12 @@ export async function GET() {
   try {
     // Append timestamp to bypass Google Apps Script 302 caching
     const targetUrl = new URL(APPS_SCRIPT_URL);
-    targetUrl.searchParams.append("t", Date.now().toString());
+    // Since we want the proxy to cache the response for 30 seconds, we round the timestamp here as well
+    targetUrl.searchParams.append("t", Math.floor(Date.now() / 30000).toString());
 
     // Follow redirects (important for Workspace-domain Google Apps Script URLs)
     const res = await fetch(targetUrl.toString(), {
-      cache: "no-store",
+      next: { revalidate: 30 },
       redirect: "follow",
       headers: {
         Accept: "application/json, text/plain, */*",
@@ -60,13 +60,10 @@ export async function GET() {
       );
     }
 
-    // Completely disable caching on CDN/Vercel Edge as well
+    // Enable 30-second caching on Vercel Edge Network
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0",
-        "Surrogate-Control": "no-store",
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
         "Access-Control-Allow-Origin": "*",
       },
     });

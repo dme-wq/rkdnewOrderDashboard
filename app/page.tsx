@@ -27,10 +27,10 @@ async function fetchProductionClient(): Promise<ApiResponse> {
 
   try {
     const proxyUrl = new URL("/api/production", window.location.origin);
-    proxyUrl.searchParams.append("t", Date.now().toString());
+    proxyUrl.searchParams.append("t", Math.floor(Date.now() / 30000).toString());
     
     const proxyRes = await fetch(proxyUrl.toString(), {
-      cache: "no-store",
+      // Proxy handles its own caching, but we still bypass browser cache per 30s window
       signal: AbortSignal.timeout(15000),
     });
 
@@ -44,14 +44,15 @@ async function fetchProductionClient(): Promise<ApiResponse> {
 
   if (!DIRECT_URL) throw new Error("NEXT_PUBLIC_APPS_SCRIPT_URL is not set");
 
-  // Add a timestamp cache-buster. Google Apps Script /exec endpoints return a 302 redirect.
-  // Browsers aggressively cache 302 redirects even if cache: 'no-store' is set. 
-  // Appending the current timestamp forces a completely fresh request every time.
+  // Add a 30-second cache-buster. By dividing by 30000, the timestamp stays the same 
+  // for 30 seconds, allowing the browser to serve from cache instantly. After 30s, 
+  // the timestamp changes and forces a fresh request.
   const cacheBusterUrl = new URL(DIRECT_URL);
-  cacheBusterUrl.searchParams.append("t", Date.now().toString());
+  cacheBusterUrl.searchParams.append("t", Math.floor(Date.now() / 30000).toString());
 
   const directRes = await fetch(cacheBusterUrl.toString(), { 
-    cache: "no-store", 
+    // We can use default cache behavior here because the timestamp uniquely identifies 
+    // the 30-second window.
     signal: AbortSignal.timeout(20000) 
   });
   if (!directRes.ok) throw new Error("Apps Script HTTP error");
