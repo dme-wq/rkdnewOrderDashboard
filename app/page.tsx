@@ -22,12 +22,57 @@ const DEFAULT_FILTERS: ActiveFilters = {
   karigarNames: [],
 };
 
+// ── Smart fetch: tries server proxy first, then direct client-side fetch ──────
 async function fetchProduction(): Promise<ApiResponse> {
-  const res = await fetch("/api/production", { cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error || "API returned failure");
-  return data;
+  const DIRECT_URL = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || "";
+
+  // 1. Try the server-side proxy (avoids CORS, works for public scripts)
+  try {
+    const proxyRes = await fetch("/api/production", {
+      cache: "no-store",
+      signal: AbortSignal.timeout(15000), // 15s timeout
+    });
+
+    if (proxyRes.ok) {
+      const data = await proxyRes.json();
+      if (data.success) return data;
+      // If proxy gives us a detail about the error, log it
+      console.warn("[Proxy] Apps Script error:", data.error, data.detail ?? "");
+    }
+  } catch (proxyErr) {
+    console.warn("[Proxy] Server proxy failed:", proxyErr);
+  }
+
+  // 2. Fallback: call Apps Script directly from browser (works when CORS allowed)
+  if (!DIRECT_URL) {
+    throw new Error(
+      "NEXT_PUBLIC_APPS_SCRIPT_URL is not set. Add it to Vercel environment variables and redeploy."
+    );
+  }
+
+  try {
+    const directRes = await fetch(DIRECT_URL, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(20000),
+    });
+
+    if (!directRes.ok) {
+      throw new Error(
+        `Apps Script HTTP ${directRes.status}. Make sure the script is deployed with "Who has access: Anyone" (not domain-restricted).`
+      );
+    }
+
+    const data = await directRes.json();
+    if (!data.success) throw new Error(data.error || "Apps Script returned failure");
+    return data;
+  } catch (directErr) {
+    if (directErr instanceof TypeError && directErr.message.includes("fetch")) {
+      throw new Error(
+        "CORS blocked. In Apps Script: Deploy → Manage deployments → Who has access: Anyone (not restricted to rkd.in)."
+      );
+    }
+    throw directErr;
+  }
 }
 
 export default function DashboardPage() {
@@ -59,14 +104,13 @@ export default function DashboardPage() {
   const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : null;
   const handleRefresh = () => queryClient.invalidateQueries({ queryKey: ["production"] });
 
+  const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main content */}
       <div className="main-content" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Topbar */}
         <Topbar
           title="Analytics Dashboard"
           subtitle="Live production tracker — Bathmat Tufting"
@@ -76,96 +120,95 @@ export default function DashboardPage() {
           onRefresh={handleRefresh}
         />
 
-        {/* Page body */}
         <div style={{ padding: 24, flex: 1 }}>
 
           {/* Error banner */}
           {isError && (
             <div
               style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 12,
-                padding: "12px 16px",
                 borderRadius: 10,
                 background: "rgba(239,68,68,0.08)",
                 border: "1px solid rgba(239,68,68,0.2)",
                 marginBottom: 20,
+                overflow: "hidden",
               }}
             >
-              <AlertTriangle size={16} color="#ef4444" style={{ flexShrink: 0, marginTop: 1 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#ef4444", marginBottom: 4 }}>
-                  Data fetch failed
+              {/* Main error row */}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px" }}>
+                <AlertTriangle size={16} color="#ef4444" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>
+                    Data fetch failed
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                    {errorMessage}
+                  </div>
                 </div>
-                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                  {error instanceof Error ? error.message : "Unknown error"}
-                  {" — Check that your Apps Script is deployed and the URL is correctly set in "}
-                  <code
-                    style={{
-                      background: "rgba(239,68,68,0.1)",
-                      padding: "1px 5px",
-                      borderRadius: 4,
-                      fontSize: 11,
-                      fontFamily: "monospace",
-                    }}
-                  >
-                    .env.local
-                  </code>
-                </div>
+                <button
+                  onClick={handleRefresh}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 4,
+                    padding: "4px 10px", borderRadius: 6,
+                    border: "1px solid rgba(239,68,68,0.3)",
+                    background: "transparent", color: "#ef4444",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  }}
+                >
+                  <RefreshCw size={11} /> Retry
+                </button>
               </div>
-              <button
-                onClick={handleRefresh}
+
+              {/* Fix instructions box */}
+              <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  border: "1px solid rgba(239,68,68,0.3)",
-                  background: "transparent",
-                  color: "#ef4444",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
+                  margin: "0 16px 12px",
+                  padding: "10px 14px",
+                  borderRadius: 8,
+                  background: "rgba(239,68,68,0.06)",
+                  border: "1px solid rgba(239,68,68,0.12)",
                 }}
               >
-                <RefreshCw size={11} />
-                Retry
-              </button>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#f87171", marginBottom: 6 }}>
+                  🔧 Fix Steps (Apps Script Deployment):
+                </div>
+                <ol style={{ fontSize: 11, color: "var(--text-secondary)", paddingLeft: 16, lineHeight: 1.8 }}>
+                  <li>Google Sheet kholo → Extensions → Apps Script</li>
+                  <li>Deploy → <strong>Manage deployments</strong> → pencil icon (Edit)</li>
+                  <li><strong>Who has access</strong> → <strong>Anyone</strong> (NOT &quot;Anyone with Google account&quot; or domain)</li>
+                  <li>New version deploy karo → URL copy karo</li>
+                  <li>Vercel → Environment Variables → <code style={{ background: "rgba(239,68,68,0.15)", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" }}>NEXT_PUBLIC_APPS_SCRIPT_URL</code> update karo</li>
+                  <li>Vercel pe Redeploy karo</li>
+                </ol>
+              </div>
             </div>
           )}
 
-          {/* Loading state — initial with no data */}
+          {/* Loading state */}
           {isLoading && !data && (
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "12px 16px",
-                borderRadius: 10,
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "12px 16px", borderRadius: 10, marginBottom: 20,
                 background: "rgba(99,102,241,0.06)",
                 border: "1px solid rgba(99,102,241,0.15)",
-                marginBottom: 20,
               }}
             >
               <Database size={14} color="#6366f1" />
               <span style={{ fontSize: 13, color: "#6366f1", fontWeight: 500 }}>
-                Fetching live production data from Google Sheet...
+                Connecting to Google Sheet... (trying proxy → direct)
               </span>
             </div>
           )}
 
-          {/* ── Stat Cards ── */}
+          {/* Stat Cards */}
           <StatCards stats={stats} isLoading={isLoading} />
 
-          {/* ── Charts ── */}
+          {/* Charts */}
           <div style={{ marginTop: 20 }}>
             <ChartsRow stats={stats} isLoading={isLoading} />
           </div>
 
-          {/* ── Top 5 Highest / Lowest Karigars ── */}
+          {/* Top 5 / Bottom 5 Karigars */}
           <div style={{ marginTop: 20 }}>
             <KarigarRanking
               leaderboard={stats?.karigarLeaderboard ?? []}
@@ -173,9 +216,8 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* ── Filter Bar + Table ── */}
+          {/* Filters + Table */}
           <div style={{ marginTop: 20 }}>
-            {/* Filter bar (inline, not sticky here since it's inside the page body) */}
             <div
               style={{
                 background: "var(--bg-card)",
@@ -185,14 +227,9 @@ export default function DashboardPage() {
                 marginBottom: 16,
               }}
             >
-              <FilterBar
-                rows={processedRows}
-                filters={filters}
-                onFiltersChange={setFilters}
-              />
+              <FilterBar rows={processedRows} filters={filters} onFiltersChange={setFilters} />
             </div>
 
-            {/* Section header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
@@ -209,7 +246,6 @@ export default function DashboardPage() {
             <ProductionTable rows={filteredRows} isLoading={isLoading} />
           </div>
 
-          {/* Bottom spacing */}
           <div style={{ height: 32 }} />
         </div>
       </div>

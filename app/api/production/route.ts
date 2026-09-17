@@ -14,24 +14,58 @@ export async function GET() {
   }
 
   try {
+    // Follow redirects (important for Workspace-domain Google Apps Script URLs)
     const res = await fetch(APPS_SCRIPT_URL, {
       cache: "no-store",
-      headers: { Accept: "application/json" },
+      redirect: "follow",
+      headers: {
+        Accept: "application/json, text/plain, */*",
+        "User-Agent": "Mozilla/5.0 (compatible; NextJS-Server/1.0)",
+      },
     });
 
+    // Read body as text first to get better error info
+    const bodyText = await res.text();
+
     if (!res.ok) {
-      throw new Error(`Apps Script returned ${res.status}`);
+      // Return the actual error body for debugging
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Apps Script returned HTTP ${res.status}`,
+          detail: bodyText.slice(0, 500),
+          url: APPS_SCRIPT_URL.slice(0, 80) + "...",
+        },
+        { status: 502 }
+      );
     }
 
-    const data = await res.json();
+    // Try parsing as JSON
+    let data;
+    try {
+      data = JSON.parse(bodyText);
+    } catch {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Apps Script returned non-JSON response",
+          detail: bodyText.slice(0, 300),
+        },
+        { status: 502 }
+      );
+    }
 
     return NextResponse.json(data, {
       headers: {
         "Cache-Control": "no-store, max-age=0",
+        "Access-Control-Allow-Origin": "*",
       },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message, url: APPS_SCRIPT_URL.slice(0, 80) },
+      { status: 500 }
+    );
   }
 }
