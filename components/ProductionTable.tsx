@@ -99,8 +99,10 @@ function SmartFilter({ label, options, selected, onChange }: SmartFilterProps) {
     <div ref={ref} className="relative inline-flex items-center">
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all border ${
-          isActive || open ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all border shadow-sm ${
+          isActive || open 
+            ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-primary/50 shadow-primary/20" 
+            : "bg-card/80 backdrop-blur-sm text-muted-foreground border-border hover:border-primary/30 hover:bg-muted/50 hover:text-foreground"
         }`}
       >
         {label}
@@ -316,13 +318,13 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
         {/* Right: Date Presets & Export */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center p-1 bg-muted/40 rounded-xl border border-border">
-            <Calendar size={13} className="text-muted-foreground/70 mx-2" />
+          <div className="flex items-center p-1 bg-muted/40 rounded-xl border border-border gap-1 overflow-x-auto max-w-[280px] sm:max-w-full hide-scrollbar">
+            <Calendar size={13} className="text-muted-foreground/70 mx-2 flex-shrink-0" />
             {DATE_PRESETS.map((p) => (
               <button
                 key={p.value}
                 onClick={() => applyPreset(p.value)}
-                className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all outline-none ${
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all outline-none whitespace-nowrap flex-shrink-0 ${
                   activePreset === p.value
                     ? "bg-card text-foreground shadow-sm shadow-black/5"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -345,9 +347,9 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       </div>
       
       {/* ── Smart Dynamic Dependent Filters (Above Table) ── */}
-      <div className="px-4 py-3 bg-muted/10 border-b border-border flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground mr-1">
-          <Filter size={14} /> Filters
+      <div className="px-5 py-3.5 bg-muted/20 border-b border-border flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground mr-2 bg-card px-3 py-1.5 rounded-full border border-border shadow-sm">
+          <Filter size={14} className="text-primary" /> Filters
         </div>
         <SmartFilter
           label="PO Number"
