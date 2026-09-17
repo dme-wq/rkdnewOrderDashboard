@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 
 const APPS_SCRIPT_URL = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || "";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// Cache the response for 60 seconds (Incremental Static Regeneration)
+// This will make data fetching instant for the user after the first load.
+export const revalidate = 60; 
 
 export async function GET() {
   if (!APPS_SCRIPT_URL) {
@@ -16,7 +17,7 @@ export async function GET() {
   try {
     // Follow redirects (important for Workspace-domain Google Apps Script URLs)
     const res = await fetch(APPS_SCRIPT_URL, {
-      cache: "no-store",
+      next: { revalidate: 60 },
       redirect: "follow",
       headers: {
         Accept: "application/json, text/plain, */*",
@@ -55,9 +56,10 @@ export async function GET() {
       );
     }
 
+    // Set Cache-Control to enable stale-while-revalidate on Vercel Edge Network
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "no-store, max-age=0",
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
         "Access-Control-Allow-Origin": "*",
       },
     });
