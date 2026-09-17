@@ -129,22 +129,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Loading state - rarely visible now because of localStorage cache */}
-          {isLoading && !data && (
-            <div
-              style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "12px 16px", borderRadius: 10, marginBottom: 20,
-                background: "rgba(99,102,241,0.06)",
-                border: "1px solid rgba(99,102,241,0.15)",
-              }}
-            >
-              <Database size={14} color="#6366f1" />
-              <span style={{ fontSize: 13, color: "#6366f1", fontWeight: 500 }}>
-                Loading data...
-              </span>
-            </div>
-          )}
+
 
           {/* Stat Cards */}
           <StatCards stats={stats} isLoading={isLoading && !data} />

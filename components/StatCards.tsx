@@ -56,9 +56,9 @@ function TrendChip({ current, previous }: { current: number; previous: number })
 
 function SkeletonCard({ color }: { color: string }) {
   return (
-    <div className={`stat-card ${color}`} style={{ minHeight: 120 }}>
-      <div style={{ height: 12, width: "50%", background: "rgba(255,255,255,0.2)", borderRadius: 6, marginBottom: 12 }} />
-      <div style={{ height: 36, width: "60%", background: "rgba(255,255,255,0.25)", borderRadius: 8, marginBottom: 10 }} />
+    <div className={`stat-card ${color}`} style={{ minHeight: 90 }}>
+      <div style={{ height: 10, width: "50%", background: "rgba(255,255,255,0.2)", borderRadius: 6, marginBottom: 8 }} />
+      <div style={{ height: 28, width: "60%", background: "rgba(255,255,255,0.25)", borderRadius: 8, marginBottom: 8 }} />
       <div style={{ height: 10, width: "40%", background: "rgba(255,255,255,0.15)", borderRadius: 6 }} />
     </div>
   );
@@ -78,30 +78,30 @@ function StatCard({ label, sub, color, icon, value, prev, extra }: CardDef) {
   const display = useCountUp(value);
   return (
     <div className={`stat-card ${color} fade-up`}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.85, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.85, textTransform: "uppercase", letterSpacing: "0.05em" }}>
             {label}
           </div>
-          <div style={{ fontSize: 10, opacity: 0.7, marginTop: 1 }}>{sub}</div>
+          <div style={{ fontSize: 9, opacity: 0.7, marginTop: 1 }}>{sub}</div>
         </div>
         <div
           style={{
-            width: 32, height: 32, borderRadius: 8,
+            width: 24, height: 24, borderRadius: 6,
             background: "rgba(255,255,255,0.15)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 16, zIndex: 1, position: "relative",
+            fontSize: 12, zIndex: 1, position: "relative",
           }}
         >
           {icon}
         </div>
       </div>
-      <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, marginBottom: 8 }}>
+      <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, marginBottom: 6 }}>
         {display.toLocaleString()}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         {prev !== undefined && <TrendChip current={value} previous={prev} />}
-        {extra && <span style={{ fontSize: 10, opacity: 0.75 }}>{extra}</span>}
+        {extra && <span style={{ fontSize: 9, opacity: 0.75 }}>{extra}</span>}
       </div>
     </div>
   );
@@ -113,7 +113,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
   if (isLoading || !stats) {
     return (
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, width: "100%", maxWidth: 1200 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, width: "100%", maxWidth: 1200 }}>
           {colors.map((c) => <SkeletonCard key={c} color={c} />)}
         </div>
       </div>
@@ -165,7 +165,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
 
   return (
     <div style={{ display: "flex", justifyContent: "center" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, width: "100%", maxWidth: 1200 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, width: "100%", maxWidth: 1200 }}>
         {cards.map((c) => <StatCard key={c.label} {...c} />)}
       </div>
     </div>
