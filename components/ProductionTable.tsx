@@ -460,7 +460,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
               </th>
 
               {/* Daily Delta */}
-              <th className="px-5 py-4 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-32 border-b border-border/50 cursor-pointer hover:text-foreground group select-none pr-8" onClick={() => handleSort("dailyPiecesMade")}>
+              <th className="pl-5 pr-12 py-4 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-wider min-w-[140px] border-b border-border/50 cursor-pointer hover:text-foreground group select-none" onClick={() => handleSort("dailyPiecesMade")}>
                 <div className="flex items-center justify-end gap-1.5">
                   <SortIcon dir={sortKey === "dailyPiecesMade" ? sortDir : "none"} />
                   Daily Δ
@@ -553,7 +553,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                   </td>
                   
                   {/* Daily Delta */}
-                  <td className="px-5 py-3.5 align-middle text-right pr-8">
+                  <td className="pl-5 pr-12 py-3.5 align-middle text-right">
                     <div className={`inline-flex items-center gap-1 text-[13.5px] font-bold tabular-nums px-2 py-0.5 rounded-md ${row.dailyPiecesMade > 0 ? "bg-emerald-500/10 text-emerald-500" : "text-muted-foreground"}`}>
                       {row.dailyPiecesMade > 0 && <ChevronUp size={12} strokeWidth={3} />}
                       {row.dailyPiecesMade > 0 ? row.dailyPiecesMade : "-"}
