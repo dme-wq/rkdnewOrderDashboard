@@ -58,13 +58,14 @@ function SortIcon({ dir }: { dir: SortDir }) {
 
 // ── Smart Column Filter ──────────────────────────────────────────────────────
 
-interface ColumnFilterProps {
+interface SmartFilterProps {
+  label: string;
   options: string[];
   selected: string[];
   onChange: (vals: string[]) => void;
 }
 
-function ColumnFilter({ options, selected, onChange }: ColumnFilterProps) {
+function SmartFilter({ label, options, selected, onChange }: SmartFilterProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -84,14 +85,20 @@ function ColumnFilter({ options, selected, onChange }: ColumnFilterProps) {
   const isActive = selected.length > 0;
 
   return (
-    <div ref={ref} className="relative inline-flex items-center ml-1">
+    <div ref={ref} className="relative inline-flex items-center">
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className={`p-1 rounded-md transition-colors flex items-center justify-center ${
-          isActive || open ? "bg-primary/10 text-primary" : "text-muted-foreground/40 hover:bg-muted hover:text-foreground"
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all border ${
+          isActive || open ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
         }`}
       >
-        <Filter size={13} className={isActive ? "fill-primary/20" : ""} />
+        {label}
+        {isActive && (
+          <span className="bg-black/20 text-white text-[9px] font-bold px-1.5 rounded-full min-w-[16px] text-center">
+            {selected.length}
+          </span>
+        )}
+        <ChevronDown size={13} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
@@ -324,6 +331,37 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
           </button>
         </div>
       </div>
+      
+      {/* ── Smart Dynamic Dependent Filters (Above Table) ── */}
+      <div className="px-4 py-3 bg-muted/10 border-b border-border flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground mr-1">
+          <Filter size={14} /> Filters
+        </div>
+        <SmartFilter
+          label="PO Number"
+          options={uniqueVals.poNumbers}
+          selected={filters.poNumbers}
+          onChange={(v) => onFiltersChange({ ...filters, poNumbers: v })}
+        />
+        <SmartFilter
+          label="Design"
+          options={uniqueVals.designNames}
+          selected={filters.designNames}
+          onChange={(v) => onFiltersChange({ ...filters, designNames: v })}
+        />
+        <SmartFilter
+          label="Color"
+          options={uniqueVals.yarnColors}
+          selected={filters.yarnColors}
+          onChange={(v) => onFiltersChange({ ...filters, yarnColors: v })}
+        />
+        <SmartFilter
+          label="Karigar"
+          options={uniqueVals.karigarNames}
+          selected={filters.karigarNames}
+          onChange={(v) => onFiltersChange({ ...filters, karigarNames: v })}
+        />
+      </div>
 
       {/* ── Custom Date Picker (if active) ── */}
       {activePreset === "custom" && (
@@ -359,11 +397,6 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                     PO Number
                   </span>
                   <SortIcon dir={sortKey === "Buyer PO Number" ? sortDir : "none"} />
-                  <ColumnFilter
-                    options={uniqueVals.poNumbers}
-                    selected={filters.poNumbers}
-                    onChange={(v) => onFiltersChange({ ...filters, poNumbers: v })}
-                  />
                 </div>
               </th>
 
@@ -374,11 +407,6 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                     Design
                   </span>
                   <SortIcon dir={sortKey === "Design Name" ? sortDir : "none"} />
-                  <ColumnFilter
-                    options={uniqueVals.designNames}
-                    selected={filters.designNames}
-                    onChange={(v) => onFiltersChange({ ...filters, designNames: v })}
-                  />
                 </div>
               </th>
 
@@ -389,11 +417,6 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                     Color
                   </span>
                   <SortIcon dir={sortKey === "Yarn Color" ? sortDir : "none"} />
-                  <ColumnFilter
-                    options={uniqueVals.yarnColors}
-                    selected={filters.yarnColors}
-                    onChange={(v) => onFiltersChange({ ...filters, yarnColors: v })}
-                  />
                 </div>
               </th>
 
@@ -409,11 +432,6 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                     Karigar
                   </span>
                   <SortIcon dir={sortKey === "Name of Karigar 1" ? sortDir : "none"} />
-                  <ColumnFilter
-                    options={uniqueVals.karigarNames}
-                    selected={filters.karigarNames}
-                    onChange={(v) => onFiltersChange({ ...filters, karigarNames: v })}
-                  />
                 </div>
               </th>
 
