@@ -1,29 +1,46 @@
 // ============================================
 // KARIGAR PRODUCTION DASHBOARD - BACKEND API
 // ============================================
-// Deploy karein: Extensions → Apps Script → Deploy → New deployment
-// Execute as: Me | Who has access: Anyone
+// IMPORTANT: Pehle testAccess() function ko editor mein Run karo!
+// Ye Google ko permission deta hai Sheet access karne ki.
 // ============================================
 
+const SHEET_ID = "1CnKwG2L_nslYXThzRxtiWaD3ixIIPvi0sMR3mQnQscA";
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1CnKwG2L_nslYXThzRxtiWaD3ixIIPvi0sMR3mQnQscA/edit";
 const DATA_ENTRY_TAB = "Data Entry";
 const PRODUCTION_MASTER_TAB = "Production Master";
 
+// ─── TEST FUNCTION: Isko Editor mein Run karo (pehli baar authorization ke liye) ───
+function testAccess() {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    Logger.log("✅ SUCCESS! Sheet name: " + ss.getName());
+    Logger.log("Sheets available: " + ss.getSheets().map(function(s){ return s.getName(); }).join(", "));
+  } catch(e) {
+    Logger.log("❌ ERROR: " + e.message);
+    Logger.log("Hint: Make sure you are logged in with the account that has access to this Google Sheet.");
+  }
+}
+
+// ─── MAIN API FUNCTION ───────────────────────────────────────────────────────
 function doGet(e) {
   try {
-    // Try getActiveSpreadsheet first (works when script is bound to the sheet)
-    // Falls back to openById if SHEET_ID is set
-    const SHEET_ID = "1CnKwG2L_nslYXThzRxtiWaD3ixIIPvi0sMR3mQnQscA";
+    var ss;
     
-    let ss;
+    // Try bound spreadsheet first
     try {
       ss = SpreadsheetApp.getActiveSpreadsheet();
-      if (!ss) throw new Error("No active spreadsheet");
-    } catch (e1) {
+    } catch(e1) {
+      ss = null;
+    }
+    
+    // Fallback: open by ID (works if this account has sheet access)
+    if (!ss) {
       ss = SpreadsheetApp.openById(SHEET_ID);
     }
 
-    const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "all";
-    let result;
+    var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "all";
+    var result;
 
     if (action === "dataEntry") {
       result = { dataEntry: getSheetAsJSON(ss, DATA_ENTRY_TAB) };
@@ -34,7 +51,7 @@ function doGet(e) {
         dataEntry: getSheetAsJSON(ss, DATA_ENTRY_TAB),
         productionMaster: getSheetAsJSON(ss, PRODUCTION_MASTER_TAB),
         lastUpdated: new Date().toISOString(),
-        sheetName: ss.getName()
+        spreadsheetName: ss.getName()
       };
     }
 
@@ -47,41 +64,39 @@ function doGet(e) {
       .createTextOutput(JSON.stringify({ 
         success: false, 
         error: err.message,
-        hint: "Make sure this script is created via Extensions → Apps Script inside the Google Sheet, not as a standalone script."
+        fix: "Run testAccess() function manually in Apps Script editor to authorize permissions, then redeploy."
       }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
+// ─── HELPER: Sheet rows to JSON ──────────────────────────────────────────────
 function getSheetAsJSON(ss, sheetName) {
-  const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) throw new Error("Sheet not found: " + sheetName + ". Available sheets: " + ss.getSheets().map(s => s.getName()).join(", "));
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    var available = ss.getSheets().map(function(s){ return s.getName(); }).join(", ");
+    throw new Error("Sheet not found: '" + sheetName + "'. Available: " + available);
+  }
 
-  const range = sheet.getDataRange();
-  const values = range.getDisplayValues();
-  const rawValues = range.getValues();
-
-  const headers = values[0].map(function(h) { return String(h).trim(); });
-  const rows = [];
+  var range = sheet.getDataRange();
+  var values = range.getDisplayValues();
+  var rawValues = range.getValues();
+  var headers = values[0].map(function(h) { return String(h).trim(); });
+  var rows = [];
 
   for (var r = 1; r < values.length; r++) {
-    var rowDisplay = values[r];
-    var rowRaw = rawValues[r];
-
-    var isEmpty = rowDisplay.every(function(cell) { return cell === "" || cell === null; });
+    var isEmpty = values[r].every(function(cell) { return cell === "" || cell === null; });
     if (isEmpty) continue;
-
     var obj = {};
     headers.forEach(function(header, c) {
       if (!header) return;
-      var val = rowDisplay[c];
-      if (rowRaw[c] instanceof Date) {
-        val = Utilities.formatDate(rowRaw[c], Session.getScriptTimeZone(), "yyyy-MM-dd");
+      var val = values[r][c];
+      if (rawValues[r][c] instanceof Date) {
+        val = Utilities.formatDate(rawValues[r][c], Session.getScriptTimeZone(), "yyyy-MM-dd");
       }
       obj[header] = val;
     });
     rows.push(obj);
   }
-
   return rows;
 }
