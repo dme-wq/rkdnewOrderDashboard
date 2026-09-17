@@ -284,7 +284,8 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
 
   return (
-    <div className="rounded-2xl border border-border bg-card shadow-sm shadow-black/5 overflow-hidden flex flex-col">
+    <div className="relative rounded-2xl bg-gradient-to-br from-primary/30 via-border/50 to-primary/10 p-[1px] shadow-lg shadow-black/5 mb-6">
+      <div className="rounded-[15px] bg-card overflow-hidden flex flex-col w-full">
       
       {/* ── Modern Unified Toolbar ── */}
       <div className="p-4 border-b border-border bg-card/60 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between z-20 relative">
@@ -620,6 +621,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
