@@ -21,42 +21,22 @@ const DEFAULT_FILTERS: ActiveFilters = {
   karigarNames: [],
 };
 
-// Client-side background fetcher (bypasses proxy for faster subsequent loads if possible)
+// Client-side fetcher — always fetches fresh, no caching
 async function fetchProductionClient(): Promise<ApiResponse> {
-  const DIRECT_URL = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || "";
+  const proxyUrl = new URL("/api/production", window.location.origin);
+  // Unique timestamp every call — bypasses browser HTTP cache
+  proxyUrl.searchParams.append("t", Date.now().toString());
 
-  try {
-    const proxyUrl = new URL("/api/production", window.location.origin);
-    proxyUrl.searchParams.append("t", Math.floor(Date.now() / 30000).toString());
-    
-    const proxyRes = await fetch(proxyUrl.toString(), {
-      // Proxy handles its own caching, but we still bypass browser cache per 30s window
-      signal: AbortSignal.timeout(15000),
-    });
+  const proxyRes = await fetch(proxyUrl.toString(), {
+    cache: "no-store",
+    signal: AbortSignal.timeout(15000),
+  });
 
-    if (proxyRes.ok) {
-      const data = await proxyRes.json();
-      if (data.success) return data;
-    }
-  } catch (err) {
-    // ignore
+  if (!proxyRes.ok) {
+    throw new Error(`API returned HTTP ${proxyRes.status}`);
   }
 
-  if (!DIRECT_URL) throw new Error("NEXT_PUBLIC_APPS_SCRIPT_URL is not set");
-
-  // Add a 30-second cache-buster. By dividing by 30000, the timestamp stays the same 
-  // for 30 seconds, allowing the browser to serve from cache instantly. After 30s, 
-  // the timestamp changes and forces a fresh request.
-  const cacheBusterUrl = new URL(DIRECT_URL);
-  cacheBusterUrl.searchParams.append("t", Math.floor(Date.now() / 30000).toString());
-
-  const directRes = await fetch(cacheBusterUrl.toString(), { 
-    // We can use default cache behavior here because the timestamp uniquely identifies 
-    // the 30-second window.
-    signal: AbortSignal.timeout(20000) 
-  });
-  if (!directRes.ok) throw new Error("Apps Script HTTP error");
-  const data = await directRes.json();
+  const data = await proxyRes.json();
   if (!data.success) throw new Error(data.error || "Failed to load data");
   return data;
 }
@@ -68,8 +48,11 @@ export default function DashboardPage() {
   const { data, isLoading, isError, error, dataUpdatedAt } = useQuery<ApiResponse>({
     queryKey: ["production"],
     queryFn: fetchProductionClient,
-    refetchInterval: 60 * 1000,
-    staleTime: 55 * 1000,
+    refetchInterval: 10 * 1000,   // Re-fetch every 10 seconds
+    staleTime: 0,                  // Data is always considered stale — refetch immediately
+    gcTime: 0,                     // Don't keep old data in memory cache
+    refetchOnWindowFocus: true,    // Refetch when user switches back to tab
+    refetchOnReconnect: true,      // Refetch on network reconnect
   });
 
   const processedRows = useMemo<ProcessedRow[]>(() => {
