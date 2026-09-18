@@ -41,27 +41,25 @@ function TrendChip({ current, previous }: { current: number; previous: number })
         display: "inline-flex",
         alignItems: "center",
         gap: 2,
-        padding: "1px 5px",
+        padding: "1px 4px",
         borderRadius: 99,
-        fontSize: 9.5,
+        fontSize: 8,
         fontWeight: 700,
-        background: "rgba(255,255,255,0.20)",
-        letterSpacing: "0.01em",
-        flexShrink: 0,
+        background: "rgba(255,255,255,0.22)",
       }}
     >
-      {same ? <Minus size={8} /> : up ? <TrendingUp size={8} /> : <TrendingDown size={8} />}
+      {same ? <Minus size={7} /> : up ? <TrendingUp size={7} /> : <TrendingDown size={7} />}
       {up ? "+" : ""}{pct}%
     </span>
   );
 }
 
 const GRADIENTS = [
-  { from: "#4338ca", to: "#6366f1", shadow: "rgba(79,70,229,0.32)" },
-  { from: "#6d28d9", to: "#8b5cf6", shadow: "rgba(109,40,217,0.32)" },
-  { from: "#be123c", to: "#e11d48", shadow: "rgba(190,18,60,0.32)" },
-  { from: "#b45309", to: "#d97706", shadow: "rgba(180,83,9,0.32)" },
-  { from: "#047857", to: "#059669", shadow: "rgba(5,150,105,0.32)" },
+  { from: "#4338ca", to: "#6366f1", shadow: "rgba(79,70,229,0.28)" },
+  { from: "#6d28d9", to: "#8b5cf6", shadow: "rgba(109,40,217,0.28)" },
+  { from: "#be123c", to: "#e11d48", shadow: "rgba(190,18,60,0.28)" },
+  { from: "#b45309", to: "#d97706", shadow: "rgba(180,83,9,0.28)" },
+  { from: "#047857", to: "#059669", shadow: "rgba(5,150,105,0.28)" },
 ];
 
 interface CardDef {
@@ -82,37 +80,40 @@ function StatCard({ label, sub, gradIdx, Icon, value, prev }: CardDef) {
       className="fade-up"
       style={{
         background: `linear-gradient(140deg, ${g.from} 0%, ${g.to} 100%)`,
-        boxShadow: `0 3px 12px ${g.shadow}`,
-        borderRadius: 20,
-        padding: "8px 10px 10px",
+        boxShadow: `0 2px 8px ${g.shadow}`,
+        borderRadius: 16,
+        padding: "6px 10px 7px",
         color: "#fff",
         position: "relative",
         overflow: "hidden",
         cursor: "default",
-        transition: "transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease",
+        transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         textAlign: "center",
-        gap: 4,
+        gap: 2,
+        minWidth: 80,
+        maxWidth: 110,
+        width: "100%",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.transform = "translateY(-3px) scale(1.03)";
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 22px ${g.shadow}`;
+        (e.currentTarget as HTMLElement).style.transform = "translateY(-2px) scale(1.04)";
+        (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 18px ${g.shadow}`;
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.transform = "translateY(0) scale(1)";
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 3px 12px ${g.shadow}`;
+        (e.currentTarget as HTMLElement).style.boxShadow = `0 2px 8px ${g.shadow}`;
       }}
     >
       {/* Decorative orb */}
       <div
         style={{
           position: "absolute",
-          top: -14,
-          right: -14,
-          width: 52,
-          height: 52,
+          top: -10,
+          right: -10,
+          width: 36,
+          height: 36,
           borderRadius: "50%",
           background: "rgba(255,255,255,0.10)",
           pointerEvents: "none",
@@ -122,31 +123,33 @@ function StatCard({ label, sub, gradIdx, Icon, value, prev }: CardDef) {
       {/* Icon */}
       <div
         style={{
-          width: 24,
-          height: 24,
-          borderRadius: 8,
+          width: 18,
+          height: 18,
+          borderRadius: 6,
           background: "rgba(255,255,255,0.20)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           zIndex: 1,
           position: "relative",
+          flexShrink: 0,
         }}
       >
-        <Icon size={12} />
+        <Icon size={10} />
       </div>
 
       {/* Label */}
       <span
         style={{
-          fontSize: 8.5,
+          fontSize: 7.5,
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.08em",
-          opacity: 0.82,
+          opacity: 0.80,
           lineHeight: 1,
           zIndex: 1,
           position: "relative",
+          whiteSpace: "nowrap",
         }}
       >
         {label}
@@ -155,7 +158,7 @@ function StatCard({ label, sub, gradIdx, Icon, value, prev }: CardDef) {
       {/* Big number */}
       <div
         style={{
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: 900,
           letterSpacing: "-0.04em",
           lineHeight: 1,
@@ -168,8 +171,18 @@ function StatCard({ label, sub, gradIdx, Icon, value, prev }: CardDef) {
       </div>
 
       {/* Sub + trend */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, zIndex: 1, position: "relative" }}>
-        <span style={{ fontSize: 8.5, opacity: 0.65, fontWeight: 500, lineHeight: 1 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 3,
+          zIndex: 1,
+          position: "relative",
+          flexWrap: "wrap",
+        }}
+      >
+        <span style={{ fontSize: 7.5, opacity: 0.65, fontWeight: 500, lineHeight: 1, whiteSpace: "nowrap" }}>
           {sub}
         </span>
         {prev !== undefined && <TrendChip current={value} previous={prev} />}
@@ -184,19 +197,22 @@ function SkeletonCard({ gradIdx }: { gradIdx: number }) {
     <div
       style={{
         background: `linear-gradient(140deg, ${g.from} 0%, ${g.to} 100%)`,
-        borderRadius: 20,
-        padding: "8px 10px 10px",
+        borderRadius: 16,
+        padding: "6px 10px 7px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 4,
-        opacity: 0.6,
+        gap: 2,
+        opacity: 0.5,
+        minWidth: 80,
+        maxWidth: 110,
+        width: "100%",
       }}
     >
-      <div style={{ height: 24, width: 24, background: "rgba(255,255,255,0.20)", borderRadius: 8 }} />
-      <div style={{ height: 8, width: "55%", background: "rgba(255,255,255,0.20)", borderRadius: 4 }} />
-      <div style={{ height: 18, width: "50%", background: "rgba(255,255,255,0.28)", borderRadius: 4 }} />
-      <div style={{ height: 8, width: "40%", background: "rgba(255,255,255,0.14)", borderRadius: 4 }} />
+      <div style={{ height: 18, width: 18, background: "rgba(255,255,255,0.22)", borderRadius: 6 }} />
+      <div style={{ height: 7, width: "60%", background: "rgba(255,255,255,0.20)", borderRadius: 4 }} />
+      <div style={{ height: 16, width: "50%", background: "rgba(255,255,255,0.28)", borderRadius: 4 }} />
+      <div style={{ height: 7, width: "45%", background: "rgba(255,255,255,0.14)", borderRadius: 4 }} />
     </div>
   );
 }
@@ -204,7 +220,7 @@ function SkeletonCard({ gradIdx }: { gradIdx: number }) {
 export function StatCards({ stats, isLoading }: StatCardsProps) {
   if (isLoading || !stats) {
     return (
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
         {[0, 1, 2, 3, 4].map((i) => <SkeletonCard key={i} gradIdx={i} />)}
       </div>
     );
@@ -213,7 +229,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
   const cards: CardDef[] = [
     {
       label: "Today",
-      sub: "Pieces produced",
+      sub: "Pieces",
       gradIdx: 0,
       Icon: Calendar,
       value: stats.todayPieces,
@@ -221,7 +237,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
     },
     {
       label: "This Week",
-      sub: "Mon – Today",
+      sub: "Mon–Today",
       gradIdx: 1,
       Icon: CalendarDays,
       value: stats.thisWeekPieces,
@@ -229,15 +245,15 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
     },
     {
       label: "This Month",
-      sub: "Calendar month",
+      sub: "Month",
       gradIdx: 2,
       Icon: Layers,
       value: stats.thisMonthPieces,
       prev: stats.lastMonthPieces,
     },
     {
-      label: "This Quarter",
-      sub: "Quarter total",
+      label: "This Qtr",
+      sub: "Quarter",
       gradIdx: 3,
       Icon: BarChart3,
       value: stats.thisQuarterPieces,
@@ -253,7 +269,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
   ];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+    <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
       {cards.map((c) => <StatCard key={c.label} {...c} />)}
     </div>
   );
