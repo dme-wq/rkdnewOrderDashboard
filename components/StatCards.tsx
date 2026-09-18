@@ -1,7 +1,7 @@
 "use client";
 
 import { AggregatedStats } from "@/lib/types";
-import { TrendingUp, TrendingDown, Minus, Calendar, CalendarDays, BarChart3, Trophy } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Calendar, CalendarDays, BarChart3, Trophy, Layers } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface StatCardsProps {
@@ -9,7 +9,7 @@ interface StatCardsProps {
   isLoading: boolean;
 }
 
-function useCountUp(target: number, duration = 1000) {
+function useCountUp(target: number, duration = 900) {
   const [value, setValue] = useState(0);
   const prev = useRef(0);
   useEffect(() => {
@@ -36,61 +36,93 @@ function TrendChip({ current, previous }: { current: number; previous: number })
   const up = pct > 0;
   const same = pct === 0;
   return (
-    <div
+    <span
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 3,
-        padding: "2px 7px",
+        gap: 2,
+        padding: "1px 5px",
         borderRadius: 99,
-        background: "rgba(255,255,255,0.22)",
-        fontSize: 10.5,
+        fontSize: 9.5,
         fontWeight: 700,
+        background: "rgba(255,255,255,0.20)",
         letterSpacing: "0.01em",
+        flexShrink: 0,
       }}
     >
-      {same ? <Minus size={9} /> : up ? <TrendingUp size={9} /> : <TrendingDown size={9} />}
+      {same ? <Minus size={8} /> : up ? <TrendingUp size={8} /> : <TrendingDown size={8} />}
       {up ? "+" : ""}{pct}%
-    </div>
+    </span>
   );
 }
 
-function SkeletonCard({ color }: { color: string }) {
-  return (
-    <div
-      className={`stat-card ${color}`}
-      style={{ minHeight: 90, display: "flex", flexDirection: "column", justifyContent: "center", padding: "14px 16px" }}
-    >
-      <div style={{ height: 10, width: "50%", background: "rgba(255,255,255,0.18)", borderRadius: 6, marginBottom: 10 }} />
-      <div style={{ height: 26, width: "65%", background: "rgba(255,255,255,0.26)", borderRadius: 6, marginBottom: 8 }} />
-      <div style={{ height: 10, width: "35%", background: "rgba(255,255,255,0.14)", borderRadius: 6 }} />
-    </div>
-  );
-}
+const GRADIENTS = [
+  { from: "#4338ca", to: "#6366f1", shadow: "rgba(79,70,229,0.32)" },
+  { from: "#6d28d9", to: "#8b5cf6", shadow: "rgba(109,40,217,0.32)" },
+  { from: "#be123c", to: "#e11d48", shadow: "rgba(190,18,60,0.32)" },
+  { from: "#b45309", to: "#d97706", shadow: "rgba(180,83,9,0.32)" },
+  { from: "#047857", to: "#059669", shadow: "rgba(5,150,105,0.32)" },
+];
 
 interface CardDef {
   label: string;
   sub: string;
-  color: string;
-  Icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+  gradIdx: number;
+  Icon: React.ComponentType<{ size?: number }>;
   value: number;
   prev?: number;
-  extra?: string;
 }
 
-function StatCard({ label, sub, color, Icon, value, prev }: CardDef) {
+function StatCard({ label, sub, gradIdx, Icon, value, prev }: CardDef) {
   const display = useCountUp(value);
+  const g = GRADIENTS[gradIdx];
+
   return (
     <div
-      className={`stat-card ${color} fade-up`}
-      style={{ display: "flex", flexDirection: "column", padding: "16px 18px", minHeight: 90 }}
+      className="fade-up"
+      style={{
+        background: `linear-gradient(140deg, ${g.from} 0%, ${g.to} 100%)`,
+        boxShadow: `0 4px 16px ${g.shadow}`,
+        borderRadius: 14,
+        padding: "12px 14px",
+        color: "#fff",
+        position: "relative",
+        overflow: "hidden",
+        cursor: "default",
+        transition: "transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.transform = "translateY(-3px) scale(1.015)";
+        (e.currentTarget as HTMLElement).style.boxShadow = `0 10px 28px ${g.shadow}`;
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.transform = "translateY(0) scale(1)";
+        (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 16px ${g.shadow}`;
+      }}
     >
-      {/* Icon + label row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+      {/* Decorative orb */}
+      <div
+        style={{
+          position: "absolute",
+          top: -18,
+          right: -18,
+          width: 70,
+          height: 70,
+          borderRadius: "50%",
+          background: "rgba(255,255,255,0.10)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Top row: icon + label */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, zIndex: 1, position: "relative" }}>
         <div
           style={{
-            width: 24,
-            height: 24,
+            width: 22,
+            height: 22,
             borderRadius: 7,
             background: "rgba(255,255,255,0.18)",
             display: "flex",
@@ -99,15 +131,16 @@ function StatCard({ label, sub, color, Icon, value, prev }: CardDef) {
             flexShrink: 0,
           }}
         >
-          <Icon size={13} />
+          <Icon size={12} />
         </div>
         <span
           style={{
-            fontSize: 10.5,
+            fontSize: 9.5,
             fontWeight: 700,
-            opacity: 0.88,
             textTransform: "uppercase",
             letterSpacing: "0.07em",
+            opacity: 0.85,
+            lineHeight: 1,
           }}
         >
           {label}
@@ -117,33 +150,63 @@ function StatCard({ label, sub, color, Icon, value, prev }: CardDef) {
       {/* Big number */}
       <div
         style={{
-          fontSize: 28,
+          fontSize: 24,
           fontWeight: 900,
           letterSpacing: "-0.04em",
           lineHeight: 1,
-          marginBottom: 8,
           fontVariantNumeric: "tabular-nums",
+          zIndex: 1,
+          position: "relative",
         }}
       >
         {display.toLocaleString()}
       </div>
 
-      {/* Sub + trend */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: "auto" }}>
-        <span style={{ fontSize: 11, opacity: 0.72, fontWeight: 500 }}>{sub}</span>
+      {/* Sub + trend row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 5,
+          zIndex: 1,
+          position: "relative",
+        }}
+      >
+        <span style={{ fontSize: 9.5, opacity: 0.68, fontWeight: 500, flex: 1, lineHeight: 1 }}>
+          {sub}
+        </span>
         {prev !== undefined && <TrendChip current={value} previous={prev} />}
       </div>
     </div>
   );
 }
 
-export function StatCards({ stats, isLoading }: StatCardsProps) {
-  const colors = ["stat-purple", "stat-violet", "stat-red", "stat-amber", "stat-green"];
+function SkeletonCard({ gradIdx }: { gradIdx: number }) {
+  const g = GRADIENTS[gradIdx];
+  return (
+    <div
+      style={{
+        background: `linear-gradient(140deg, ${g.from} 0%, ${g.to} 100%)`,
+        borderRadius: 14,
+        padding: "12px 14px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        opacity: 0.6,
+      }}
+    >
+      <div style={{ height: 10, width: "55%", background: "rgba(255,255,255,0.20)", borderRadius: 5 }} />
+      <div style={{ height: 22, width: "70%", background: "rgba(255,255,255,0.28)", borderRadius: 5 }} />
+      <div style={{ height: 9, width: "40%", background: "rgba(255,255,255,0.15)", borderRadius: 5 }} />
+    </div>
+  );
+}
 
+export function StatCards({ stats, isLoading }: StatCardsProps) {
   if (isLoading || !stats) {
     return (
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
-        {colors.map((c) => <SkeletonCard key={c} color={c} />)}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+        {[0, 1, 2, 3, 4].map((i) => <SkeletonCard key={i} gradIdx={i} />)}
       </div>
     );
   }
@@ -152,7 +215,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
     {
       label: "Today",
       sub: "Pieces produced",
-      color: "stat-purple",
+      gradIdx: 0,
       Icon: Calendar,
       value: stats.todayPieces,
       prev: stats.yesterdayPieces,
@@ -160,7 +223,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
     {
       label: "This Week",
       sub: "Mon – Today",
-      color: "stat-violet",
+      gradIdx: 1,
       Icon: CalendarDays,
       value: stats.thisWeekPieces,
       prev: stats.lastWeekPieces,
@@ -168,30 +231,30 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
     {
       label: "This Month",
       sub: "Calendar month",
-      color: "stat-red",
-      Icon: CalendarDays,
+      gradIdx: 2,
+      Icon: Layers,
       value: stats.thisMonthPieces,
       prev: stats.lastMonthPieces,
     },
     {
       label: "This Quarter",
       sub: "Quarter total",
-      color: "stat-amber",
+      gradIdx: 3,
       Icon: BarChart3,
       value: stats.thisQuarterPieces,
       prev: stats.lastQuarterPieces,
     },
     {
       label: "All Time",
-      sub: `${stats.activeKarigars} active karigars`,
-      color: "stat-green",
+      sub: `${stats.activeKarigars} karigars`,
+      gradIdx: 4,
       Icon: Trophy,
       value: stats.allTimePieces,
     },
   ];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
       {cards.map((c) => <StatCard key={c.label} {...c} />)}
     </div>
   );
