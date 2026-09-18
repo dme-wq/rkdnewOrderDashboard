@@ -8,13 +8,13 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
-  ArrowLeft,
-  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   PackageOpen,
-  Filter,
+  SlidersHorizontal,
   Check,
-  Calendar,
-  X
+  CalendarRange,
+  X,
 } from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 
@@ -38,12 +38,33 @@ const DATE_PRESETS: { label: string; value: DatePreset | "custom" }[] = [
   { label: "Custom", value: "custom" },
 ];
 
+// Karigar avatar color palette
+const AVATAR_COLORS = [
+  { bg: "rgba(99,102,241,0.15)", text: "#6366f1" },
+  { bg: "rgba(139,92,246,0.15)", text: "#8b5cf6" },
+  { bg: "rgba(16,185,129,0.15)", text: "#10b981" },
+  { bg: "rgba(59,130,246,0.15)", text: "#3b82f6" },
+  { bg: "rgba(245,158,11,0.15)", text: "#f59e0b" },
+  { bg: "rgba(236,72,153,0.15)", text: "#ec4899" },
+  { bg: "rgba(6,182,212,0.15)", text: "#06b6d4" },
+  { bg: "rgba(239,68,68,0.15)", text: "#ef4444" },
+];
+
+function getAvatarColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
 function SkeletonRow() {
   return (
     <tr>
-      {Array.from({ length: 9 }).map((_, i) => (
-        <td key={i} className="px-5 py-4">
-          <div className="skeleton h-4 rounded" style={{ width: `${60 + (i % 3) * 20}%` }} />
+      {Array.from({ length: 8 }).map((_, i) => (
+        <td key={i} style={{ padding: "14px 16px" }}>
+          <div
+            className="skeleton"
+            style={{ height: i === 6 ? 32 : 14, borderRadius: i === 6 ? 99 : 6, width: `${55 + (i % 4) * 12}%` }}
+          />
         </td>
       ))}
     </tr>
@@ -51,17 +72,16 @@ function SkeletonRow() {
 }
 
 function SortIcon({ dir }: { dir: SortDir }) {
-  if (dir === "asc") return <ChevronUp size={13} className="text-primary" />;
-  if (dir === "desc") return <ChevronDown size={13} className="text-primary" />;
-  return <ChevronsUpDown size={13} className="text-gray-300 group-hover:text-gray-500 transition-colors" />;
+  if (dir === "asc") return <ChevronUp size={12} color="#6366f1" />;
+  if (dir === "desc") return <ChevronDown size={12} color="#6366f1" />;
+  return <ChevronsUpDown size={12} style={{ opacity: 0.35 }} />;
 }
 
 function formatDate(dateStr: string) {
-  // Dates are already formatted as dd-MMM-yyyy in lib/transform.ts
   return dateStr;
 }
 
-// ── Smart Column Filter ──────────────────────────────────────────────────────
+// ── Smart Column Filter Dropdown ─────────────────────────────────────────────
 
 interface SmartFilterProps {
   label: string;
@@ -72,11 +92,15 @@ interface SmartFilterProps {
 
 function SmartFilter({ label, options, selected, onChange }: SmartFilterProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -87,65 +111,148 @@ function SmartFilter({ label, options, selected, onChange }: SmartFilterProps) {
     else onChange([...selected, val]);
   };
 
+  const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()));
   const isActive = selected.length > 0;
 
   return (
-    <div ref={ref} className="relative inline-flex items-center">
+    <div ref={ref} style={{ position: "relative" }}>
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all border ${
-          isActive || open 
-            ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm" 
-            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-        }`}
+        className={`filter-chip ${isActive || open ? "filter-chip-active" : ""}`}
       >
         {label}
         {isActive && (
-          <span className="bg-black/20 text-white text-[9px] font-bold px-1.5 rounded-full min-w-[16px] text-center">
-            {selected.length}
-          </span>
+          <span className="filter-count">{selected.length}</span>
         )}
-        <ChevronDown size={13} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          size={12}
+          style={{
+            transition: "transform 0.2s ease",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
       </button>
 
       {open && (
         <div
-          className="absolute top-full mt-2 left-0 z-[100] min-w-[200px] max-h-64 overflow-y-auto
-          rounded-xl border border-gray-200 bg-white shadow-lg py-1.5 animate-in fade-in slide-in-from-top-1
-          cursor-default font-normal text-[13px] tracking-normal normal-case"
+          className="dropdown-anim"
           onClick={(e) => e.stopPropagation()}
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            left: 0,
+            zIndex: 200,
+            minWidth: 220,
+            maxHeight: 280,
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            borderRadius: 14,
+            boxShadow: "0 12px 40px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.08)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
         >
-          {options.length === 0 && (
-            <div className="px-4 py-2 text-muted-foreground">No options</div>
+          {/* Search inside filter */}
+          {options.length > 6 && (
+            <div style={{ padding: "10px 12px 6px", borderBottom: "1px solid var(--border-light)" }}>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search ${label}...`}
+                autoFocus
+                style={{
+                  width: "100%",
+                  padding: "6px 10px",
+                  fontSize: 12,
+                  fontFamily: "Inter, sans-serif",
+                  border: "1.5px solid var(--border)",
+                  borderRadius: 8,
+                  background: "var(--bg-elevated)",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                }}
+              />
+            </div>
           )}
-          {options.map((opt) => {
-            const isSelected = selected.includes(opt);
-            return (
-              <label
-                key={opt}
-                className="flex items-center gap-3 px-3 py-2 hover:bg-muted/60 transition-colors cursor-pointer"
-              >
-                <div
-                  className={`w-4 h-4 rounded-[4px] flex flex-shrink-0 items-center justify-center border transition-colors ${
-                    isSelected
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : "border-border bg-card"
-                  }`}
+
+          {/* Options list */}
+          <div style={{ overflowY: "auto", flex: 1 }}>
+            {filtered.length === 0 && (
+              <div style={{ padding: "16px 14px", fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>
+                No options
+              </div>
+            )}
+            {filtered.map((opt) => {
+              const isSel = selected.includes(opt);
+              return (
+                <label
+                  key={opt}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "9px 14px",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    color: "var(--text-primary)",
+                    transition: "background 0.12s",
+                    background: isSel ? "var(--indigo-dim)" : "transparent",
+                  }}
+                  onMouseEnter={(e) => { if (!isSel) (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = isSel ? "var(--indigo-dim)" : "transparent"; }}
                 >
-                  {isSelected && <Check size={11} strokeWidth={3} />}
-                </div>
-                <span className="truncate text-foreground">{opt}</span>
-              </label>
-            );
-          })}
+                  {/* Checkbox */}
+                  <div
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 5,
+                      border: `2px solid ${isSel ? "var(--indigo)" : "var(--border)"}`,
+                      background: isSel ? "var(--indigo)" : "transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {isSel && <Check size={10} color="#fff" strokeWidth={3} />}
+                  </div>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt}</span>
+                </label>
+              );
+            })}
+          </div>
+
+          {/* Footer */}
           {options.length > 0 && (
-            <div className="sticky bottom-0 bg-card/90 backdrop-blur-sm border-t border-border p-2 mt-1">
+            <div
+              style={{
+                padding: "8px 12px",
+                borderTop: "1px solid var(--border-light)",
+                background: "var(--bg-elevated)",
+              }}
+            >
               <button
-                onClick={() => onChange([])}
+                onClick={() => { onChange([]); setQuery(""); }}
                 disabled={!isActive}
-                className="w-full py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors rounded-md hover:bg-muted/50"
+                style={{
+                  width: "100%",
+                  padding: "6px",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: "Inter, sans-serif",
+                  color: isActive ? "var(--indigo-light)" : "var(--text-muted)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: isActive ? "pointer" : "not-allowed",
+                  borderRadius: 6,
+                  transition: "background 0.12s",
+                }}
               >
-                Clear selection
+                {isActive ? `Clear ${selected.length} selected` : "No selection"}
               </button>
             </div>
           )}
@@ -165,7 +272,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
   const [pageSize, setPageSize] = useState(20);
   const [activePreset, setActivePreset] = useState<DatePreset | "custom" | "">("");
 
-  // Extract unique values for filters from ALL rows (not just filtered ones)
+  // Extract unique values for filters from ALL rows
   const uniqueVals = useMemo(() => {
     const poSet = new Set<string>();
     const designSet = new Set<string>();
@@ -231,11 +338,9 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
   const paginatedRows = sortedRows.slice((page - 1) * pageSize, page * pageSize);
 
-  // Pagination bounds check on data changes
   useEffect(() => {
     if (page > totalPages) setPage(1);
   }, [totalPages, page]);
-
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -275,215 +380,412 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
     filters.yarnColors.length,
     filters.karigarNames.length,
     filters.dateFrom ? 1 : 0,
-    search.trim() ? 1 : 0
+    search.trim() ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
 
-  // Calculate Grand Total for the current filtered (and searched) rows
-  const grandTotal = useMemo(() => {
-    return searchedRows.reduce((sum, row) => sum + row.dailyPiecesMade, 0);
-  }, [searchedRows]);
+  const grandTotal = useMemo(
+    () => searchedRows.reduce((sum, row) => sum + row.dailyPiecesMade, 0),
+    [searchedRows]
+  );
 
+  // Pagination page numbers
+  const pageNumbers = useMemo(() => {
+    const delta = 2;
+    const pages: (number | "…")[] = [];
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= page - delta && i <= page + delta)) {
+        pages.push(i);
+      } else if (pages[pages.length - 1] !== "…") {
+        pages.push("…");
+      }
+    }
+    return pages;
+  }, [page, totalPages]);
+
+  const thStyle: React.CSSProperties = {
+    padding: "13px 16px",
+    textAlign: "left",
+    fontSize: 10.5,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: "var(--text-muted)",
+    background: "var(--bg-elevated)",
+    borderBottom: "1px solid var(--border)",
+    whiteSpace: "nowrap",
+    userSelect: "none",
+  };
+
+  const thRight: React.CSSProperties = { ...thStyle, textAlign: "right" };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col w-full overflow-hidden mb-6">
-      
-      {/* ── Modern Unified Toolbar ── */}
-      <div className="p-4 border-b border-gray-100 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between z-20 relative bg-white">
-        
-        {/* Left: Search & Global Actions */}
-        <div className="flex flex-1 items-center gap-3">
-          <div className="relative group max-w-sm w-full">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search PO, Design, Karigar..."
-              className="w-full pl-9 pr-4 py-2.5 text-[13px] rounded-lg border border-gray-200 bg-white text-gray-900
-                placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all shadow-sm"
-            />
-          </div>
-          
-          {activeFiltersCount > 0 && (
+    <div
+      style={{
+        background: "var(--bg-card)",
+        borderRadius: 16,
+        border: "1px solid var(--border)",
+        boxShadow: "var(--shadow-md)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* ── Row 1: Search + Export ── */}
+      <div
+        style={{
+          padding: "16px 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          borderBottom: "1px solid var(--border-light)",
+        }}
+      >
+        {/* Search */}
+        <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+          <Search
+            size={15}
+            style={{
+              position: "absolute",
+              left: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "var(--text-muted)",
+              pointerEvents: "none",
+            }}
+          />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Search PO, Design, Karigar..."
+            className="table-search-input"
+          />
+          {search && (
             <button
-              onClick={clearFilters}
-              className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-all animate-in fade-in"
+              onClick={() => setSearch("")}
+              style={{
+                position: "absolute",
+                right: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--text-muted)",
+                display: "flex",
+                alignItems: "center",
+              }}
             >
-              <X size={14} /> Clear {activeFiltersCount}
+              <X size={13} />
             </button>
           )}
         </div>
 
-        {/* Right: Date Presets & Export */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center p-1 bg-gray-100/80 rounded-lg border border-gray-200/60 gap-1 overflow-x-auto max-w-[280px] sm:max-w-full hide-scrollbar">
-            <Calendar size={13} className="text-muted-foreground/70 mx-2 flex-shrink-0" />
-            {DATE_PRESETS.map((p) => (
-              <button
-                key={p.value}
-                onClick={() => applyPreset(p.value)}
-                className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all outline-none whitespace-nowrap flex-shrink-0 ${
-                  activePreset === p.value
-                    ? "bg-white text-gray-900 shadow-sm border border-gray-200/50"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          
+        {/* Result count badge */}
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: "var(--text-muted)",
+            whiteSpace: "nowrap",
+            padding: "5px 12px",
+            background: "var(--bg-elevated)",
+            borderRadius: 99,
+            border: "1px solid var(--border)",
+          }}
+        >
+          {sortedRows.length.toLocaleString()} records
+        </div>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Clear all */}
+        {activeFiltersCount > 0 && (
           <button
-            onClick={() => exportToCSV(sortedRows)}
-            disabled={sortedRows.length === 0}
-            className="flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 bg-white shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 focus:ring-2 focus:ring-blue-100 transition-all disabled:opacity-50"
-            title="Export CSV"
+            onClick={clearFilters}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "7px 12px",
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: "Inter, sans-serif",
+              color: "var(--text-secondary)",
+              background: "transparent",
+              border: "1.5px solid var(--border)",
+              borderRadius: 99,
+              cursor: "pointer",
+              transition: "all 0.15s",
+              whiteSpace: "nowrap",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = "#e11d48";
+              (e.currentTarget as HTMLElement).style.color = "#e11d48";
+              (e.currentTarget as HTMLElement).style.background = "rgba(225,29,72,0.06)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+              (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+              (e.currentTarget as HTMLElement).style.background = "transparent";
+            }}
           >
-            <Download size={16} />
+            <X size={12} />
+            Clear {activeFiltersCount}
           </button>
-        </div>
-      </div>
-      
-      {/* ── Smart Dynamic Dependent Filters (Above Table) ── */}
-      <div className="px-5 py-3 bg-white border-b border-gray-100 flex flex-wrap items-center gap-2.5">
-        <div className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-600 mr-2 bg-white px-3 py-1.5 rounded-md border border-gray-200 shadow-sm">
-          <Filter size={14} className="text-gray-500" /> Filters
-        </div>
-        <SmartFilter
-          label="PO Number"
-          options={uniqueVals.poNumbers}
-          selected={filters.poNumbers}
-          onChange={(v) => onFiltersChange({ ...filters, poNumbers: v })}
-        />
-        <SmartFilter
-          label="Design"
-          options={uniqueVals.designNames}
-          selected={filters.designNames}
-          onChange={(v) => onFiltersChange({ ...filters, designNames: v })}
-        />
-        <SmartFilter
-          label="Color"
-          options={uniqueVals.yarnColors}
-          selected={filters.yarnColors}
-          onChange={(v) => onFiltersChange({ ...filters, yarnColors: v })}
-        />
-        <SmartFilter
-          label="Karigar"
-          options={uniqueVals.karigarNames}
-          selected={filters.karigarNames}
-          onChange={(v) => onFiltersChange({ ...filters, karigarNames: v })}
-        />
+        )}
+
+        {/* Export */}
+        <button
+          onClick={() => exportToCSV(sortedRows)}
+          disabled={sortedRows.length === 0}
+          className="export-btn"
+        >
+          <Download size={14} />
+          Export
+        </button>
       </div>
 
-      {/* ── Custom Date Picker (if active) ── */}
+      {/* ── Row 2: Date Presets + Column Filters ── */}
+      <div
+        style={{
+          padding: "10px 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap",
+          borderBottom: "1px solid var(--border-light)",
+          background: "var(--bg-elevated)",
+        }}
+      >
+        {/* Date preset pills */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <CalendarRange size={14} style={{ color: "var(--text-muted)", marginRight: 4, flexShrink: 0 }} />
+          {DATE_PRESETS.map((p) => (
+            <button
+              key={p.value}
+              onClick={() => applyPreset(p.value)}
+              className={`date-pill ${activePreset === p.value ? "date-pill-active" : "date-pill-inactive"}`}
+            >
+              {p.label}
+            </button>
+          ))}
+          {activePreset && (
+            <button
+              onClick={() => { setActivePreset(""); onFiltersChange({ ...filters, dateFrom: "", dateTo: "" }); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 22,
+                height: 22,
+                borderRadius: 99,
+                border: "none",
+                background: "var(--border)",
+                color: "var(--text-muted)",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              <X size={11} />
+            </button>
+          )}
+        </div>
+
+        {/* Vertical divider */}
+        <div style={{ width: 1, height: 22, background: "var(--border)", flexShrink: 0 }} />
+
+        {/* Column filters */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <SlidersHorizontal size={13} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+          <SmartFilter
+            label="PO Number"
+            options={uniqueVals.poNumbers}
+            selected={filters.poNumbers}
+            onChange={(v) => onFiltersChange({ ...filters, poNumbers: v })}
+          />
+          <SmartFilter
+            label="Design"
+            options={uniqueVals.designNames}
+            selected={filters.designNames}
+            onChange={(v) => onFiltersChange({ ...filters, designNames: v })}
+          />
+          <SmartFilter
+            label="Color"
+            options={uniqueVals.yarnColors}
+            selected={filters.yarnColors}
+            onChange={(v) => onFiltersChange({ ...filters, yarnColors: v })}
+          />
+          <SmartFilter
+            label="Karigar"
+            options={uniqueVals.karigarNames}
+            selected={filters.karigarNames}
+            onChange={(v) => onFiltersChange({ ...filters, karigarNames: v })}
+          />
+        </div>
+      </div>
+
+      {/* ── Custom Date Range Picker ── */}
       {activePreset === "custom" && (
-        <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200">
-          <span className="text-[13px] font-medium text-muted-foreground">Select Range:</span>
+        <div
+          className="dropdown-anim"
+          style={{
+            padding: "10px 18px",
+            borderBottom: "1px solid var(--border-light)",
+            background: "var(--bg-elevated)",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <CalendarRange size={14} style={{ color: "var(--indigo-light)", flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>Custom Range:</span>
           <input
             type="date"
             value={filters.dateFrom}
             onChange={(e) => onFiltersChange({ ...filters, dateFrom: e.target.value })}
-            className="px-3 py-1.5 rounded-md text-[13px] border border-gray-200 bg-white shadow-sm text-gray-900 focus:outline-none focus:border-blue-400"
+            style={{
+              padding: "6px 12px",
+              fontSize: 12,
+              fontFamily: "Inter, sans-serif",
+              border: "1.5px solid var(--border)",
+              borderRadius: 8,
+              background: "var(--bg-card)",
+              color: "var(--text-primary)",
+              outline: "none",
+              cursor: "pointer",
+            }}
           />
-          <span className="text-muted-foreground text-sm">–</span>
+          <span style={{ color: "var(--text-muted)", fontSize: 13 }}>→</span>
           <input
             type="date"
             value={filters.dateTo}
             onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value })}
-            className="px-3 py-1.5 rounded-md text-[13px] border border-gray-200 bg-white shadow-sm text-gray-900 focus:outline-none focus:border-blue-400"
+            style={{
+              padding: "6px 12px",
+              fontSize: 12,
+              fontFamily: "Inter, sans-serif",
+              border: "1.5px solid var(--border)",
+              borderRadius: 8,
+              background: "var(--bg-card)",
+              color: "var(--text-primary)",
+              outline: "none",
+              cursor: "pointer",
+            }}
           />
         </div>
       )}
 
-      {/* ── Modern Table ── */}
-      <div className="overflow-auto relative w-full flex-1 max-h-[500px]">
-        <table className="w-full text-sm border-collapse min-w-[1100px]">
-          <thead className="bg-white sticky top-0 z-10 border-b border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      {/* ── Data Table ── */}
+      <div style={{ overflowX: "auto", flex: 1, maxHeight: 540 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+          <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
             <tr>
-              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-16 ">#</th>
-              
-              {/* Date */}
-              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-32  group select-none">
-                <div className="flex items-center gap-1.5">
-                  <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Date")}>
-                    Date
-                  </span>
-                  <SortIcon dir={sortKey === "Date" ? sortDir : "none"} />
+              <th style={{ ...thStyle, width: 52, paddingLeft: 18 }}>#</th>
+
+              <th style={{ ...thStyle, width: 120 }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+                  onClick={() => handleSort("Date")}
+                >
+                  Date <SortIcon dir={sortKey === "Date" ? sortDir : "none"} />
                 </div>
               </th>
 
-              {/* PO Number */}
-              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36  group select-none">
-                <div className="flex items-center gap-1.5">
-                  <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Buyer PO Number")}>
-                    PO Number
-                  </span>
-                  <SortIcon dir={sortKey === "Buyer PO Number" ? sortDir : "none"} />
+              <th style={{ ...thStyle, width: 110 }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+                  onClick={() => handleSort("Buyer PO Number")}
+                >
+                  PO # <SortIcon dir={sortKey === "Buyer PO Number" ? sortDir : "none"} />
                 </div>
               </th>
 
-              {/* Design */}
-              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider min-w-[200px]  group select-none">
-                <div className="flex items-center gap-1.5">
-                  <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Design Name")}>
-                    Design
-                  </span>
-                  <SortIcon dir={sortKey === "Design Name" ? sortDir : "none"} />
+              <th style={{ ...thStyle, minWidth: 200 }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+                  onClick={() => handleSort("Design Name")}
+                >
+                  Design <SortIcon dir={sortKey === "Design Name" ? sortDir : "none"} />
                 </div>
               </th>
 
-              {/* Color */}
-              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-32  group select-none">
-                <div className="flex items-center gap-1.5">
-                  <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Yarn Color")}>
-                    Color
-                  </span>
-                  <SortIcon dir={sortKey === "Yarn Color" ? sortDir : "none"} />
+              <th style={{ ...thStyle, width: 120 }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+                  onClick={() => handleSort("Yarn Color")}
+                >
+                  Color <SortIcon dir={sortKey === "Yarn Color" ? sortDir : "none"} />
                 </div>
               </th>
 
-              {/* Size */}
-              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-32 ">
-                Size
-              </th>
+              <th style={{ ...thStyle, width: 100 }}>Size</th>
 
-              {/* Karigar */}
-              <th className="px-5 py-4 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider min-w-[180px]  group select-none">
-                <div className="flex items-center gap-1.5">
-                  <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort("Name of Karigar 1")}>
-                    Karigar
-                  </span>
-                  <SortIcon dir={sortKey === "Name of Karigar 1" ? sortDir : "none"} />
+              <th style={{ ...thStyle, minWidth: 180 }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+                  onClick={() => handleSort("Name of Karigar 1")}
+                >
+                  Karigar <SortIcon dir={sortKey === "Name of Karigar 1" ? sortDir : "none"} />
                 </div>
               </th>
 
-              {/* Daily Delta */}
-              <th className="pl-5 pr-12 py-4 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider min-w-[140px] border-b border-border/50 cursor-pointer hover:text-foreground group select-none" onClick={() => handleSort("dailyPiecesMade")}>
-                <div className="flex items-center justify-end gap-1.5">
+              <th
+                style={{ ...thRight, width: 120, paddingRight: 20, cursor: "pointer" }}
+                onClick={() => handleSort("dailyPiecesMade")}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
                   <SortIcon dir={sortKey === "dailyPiecesMade" ? sortDir : "none"} />
                   Daily Δ
                 </div>
               </th>
             </tr>
           </thead>
-          
-          <tbody className="bg-white">
-            {isLoading &&
-              Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
+
+          <tbody>
+            {isLoading && Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
 
             {!isLoading && paginatedRows.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-24 text-center">
-                  <div className="flex flex-col items-center gap-4 text-muted-foreground">
-                    <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
-                      <PackageOpen size={32} className="opacity-40" />
+                <td colSpan={8} style={{ padding: "64px 24px", textAlign: "center" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+                    <div
+                      style={{
+                        width: 64,
+                        height: 64,
+                        borderRadius: 20,
+                        background: "var(--bg-elevated)",
+                        border: "1px solid var(--border)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <PackageOpen size={28} style={{ color: "var(--text-muted)" }} />
                     </div>
                     <div>
-                      <p className="text-[15px] font-semibold text-foreground">No records found</p>
-                      <p className="text-[13px] opacity-70 mt-1">Try adjusting your filters or search query</p>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
+                        No records found
+                      </p>
+                      <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                        Try adjusting your filters or search query
+                      </p>
                     </div>
                     {activeFiltersCount > 0 && (
-                      <button onClick={clearFilters} className="mt-2 text-[13px] font-medium text-primary hover:underline">
+                      <button
+                        onClick={clearFilters}
+                        style={{
+                          marginTop: 4,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          fontFamily: "Inter, sans-serif",
+                          color: "var(--indigo-light)",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                      >
                         Clear all filters
                       </button>
                     )}
@@ -493,85 +795,231 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
             )}
 
             {!isLoading &&
-              paginatedRows.map((row, idx) => (
-                <tr
-                  key={`${row["Buyer PO Number"]}-${row.karigarInfo.fullRaw}-${row.Date}-${idx}`}
-                  className="group transition-colors hover:bg-gray-50/80 border-b border-gray-100 last:border-0"
-                >
-                  <td className="px-5 py-4 text-[13px] text-gray-500 tabular-nums">
-                    {(page - 1) * pageSize + idx + 1}
-                  </td>
-                  
-                  {/* Date */}
-                  <td className="px-5 py-4 align-middle">
-                    <span className="text-[13px] font-medium text-gray-800 whitespace-nowrap">
-                      {formatDate(row.Date)}
-                    </span>
-                  </td>
-                  
-                  {/* PO */}
-                  <td className="px-5 py-4 align-middle">
-                    <span className="text-[13px] font-medium text-gray-900">
-                      {row["Buyer PO Number"]}
-                    </span>
-                  </td>
-                  
-                  {/* Design */}
-                  <td className="px-5 py-4 align-middle max-w-[140px]">
-                    <span className="text-[13.5px] font-medium text-gray-900 truncate block">{row["Design Name"]}</span>
-                  </td>
-                  
-                  {/* Color */}
-                  <td className="px-5 py-4 align-middle">
-                    <div className="flex items-center gap-2">
+              paginatedRows.map((row, idx) => {
+                const avatarColor = getAvatarColor(row.karigarInfo.name);
+                const isEven = idx % 2 === 0;
+                return (
+                  <tr
+                    key={`${row["Buyer PO Number"]}-${row.karigarInfo.fullRaw}-${row.Date}-${idx}`}
+                    style={{
+                      borderBottom: "1px solid var(--border-light)",
+                      background: isEven ? "var(--bg-card)" : "var(--bg-elevated)",
+                      transition: "background 0.12s",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = "rgba(99,102,241,0.04)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = isEven ? "var(--bg-card)" : "var(--bg-elevated)";
+                    }}
+                  >
+                    {/* Row number */}
+                    <td style={{ padding: "12px 16px 12px 18px" }}>
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
+                        {(page - 1) * pageSize + idx + 1}
+                      </span>
+                    </td>
+
+                    {/* Date */}
+                    <td style={{ padding: "12px 16px" }}>
+                      <span
+                        style={{
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                          color: "var(--text-secondary)",
+                          fontVariantNumeric: "tabular-nums",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {formatDate(row.Date)}
+                      </span>
+                    </td>
+
+                    {/* PO Number */}
+                    <td style={{ padding: "12px 16px" }}>
+                      <span
+                        style={{
+                          fontSize: 12.5,
+                          fontWeight: 700,
+                          color: "var(--indigo-light)",
+                          background: "var(--indigo-dim)",
+                          padding: "3px 8px",
+                          borderRadius: 6,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {row["Buyer PO Number"]}
+                      </span>
+                    </td>
+
+                    {/* Design */}
+                    <td style={{ padding: "12px 16px", maxWidth: 200 }}>
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                          display: "block",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {row["Design Name"]}
+                      </span>
+                    </td>
+
+                    {/* Color */}
+                    <td style={{ padding: "12px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <div
+                          style={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            border: "2px solid var(--border)",
+                            flexShrink: 0,
+                            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.08)",
+                            background:
+                              row["Yarn Color"]?.toLowerCase() === "white"
+                                ? "#f8fafc"
+                                : row["Yarn Color"]?.toLowerCase(),
+                          }}
+                        />
+                        <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{row["Yarn Color"]}</span>
+                      </div>
+                    </td>
+
+                    {/* Size */}
+                    <td style={{ padding: "12px 16px" }}>
+                      <span
+                        style={{
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          color: "var(--text-secondary)",
+                          background: "var(--bg-elevated)",
+                          border: "1px solid var(--border)",
+                          padding: "3px 8px",
+                          borderRadius: 6,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {row.Size}
+                      </span>
+                    </td>
+
+                    {/* Karigar */}
+                    <td style={{ padding: "12px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div
+                          style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: 10,
+                            background: avatarColor.bg,
+                            color: avatarColor.text,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 11,
+                            fontWeight: 800,
+                            flexShrink: 0,
+                            letterSpacing: "0.02em",
+                          }}
+                        >
+                          {row.karigarInfo.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: "var(--text-primary)",
+                              lineHeight: 1.3,
+                            }}
+                          >
+                            {row.karigarInfo.name}
+                          </p>
+                          {row.karigarInfo.phone && (
+                            <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
+                              {row.karigarInfo.phone}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Daily Delta */}
+                    <td style={{ padding: "12px 20px 12px 16px", textAlign: "right" }}>
                       <div
-                        className="w-3.5 h-3.5 rounded-full border border-border/80 flex-shrink-0 shadow-inner"
-                        style={{ background: row["Yarn Color"]?.toLowerCase() === "white" ? "#f8fafc" : row["Yarn Color"]?.toLowerCase() }}
-                      />
-                      <span className="text-[13px]">{row["Yarn Color"]}</span>
-                    </div>
-                  </td>
-                  
-                  {/* Size */}
-                  <td className="px-5 py-4 align-middle">
-                    <span className="text-[12px] font-medium text-gray-600 bg-gray-100/80 px-2.5 py-1 rounded-md">{row.Size}</span>
-                  </td>
-                  
-                  {/* Karigar */}
-                  <td className="px-5 py-4 align-middle">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[11px] font-bold uppercase shrink-0">
-                        {row.karigarInfo.name.substring(0,2)}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "4px 10px",
+                          borderRadius: 99,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          fontVariantNumeric: "tabular-nums",
+                          ...(row.dailyPiecesMade > 0
+                            ? {
+                                background: "rgba(5,150,105,0.10)",
+                                color: "#059669",
+                                border: "1px solid rgba(5,150,105,0.20)",
+                              }
+                            : {
+                                background: "var(--bg-elevated)",
+                                color: "var(--text-muted)",
+                                border: "1px solid var(--border)",
+                              }),
+                        }}
+                      >
+                        {row.dailyPiecesMade > 0 && <ChevronUp size={11} strokeWidth={3} />}
+                        {row.dailyPiecesMade > 0 ? row.dailyPiecesMade : "—"}
                       </div>
-                      <div>
-                        <p className="text-[13.5px] font-medium text-gray-900 leading-tight">{row.karigarInfo.name}</p>
-                        <p className="text-[11px] text-gray-500">{row.karigarInfo.phone}</p>
-                      </div>
-                    </div>
-                  </td>
-                  
-                  {/* Daily Delta */}
-                  <td className="pl-5 pr-12 py-4 align-middle text-right">
-                    <div className={`inline-flex items-center gap-1 text-[12px] font-bold tabular-nums px-2.5 py-1 rounded-full border ${row.dailyPiecesMade > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-gray-50 text-gray-500 border-gray-100"}`}>
-                      {row.dailyPiecesMade > 0 && <ChevronUp size={12} strokeWidth={3} />}
-                      {row.dailyPiecesMade > 0 ? row.dailyPiecesMade : "-"}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
-          
-          {/* ── Grand Total Footer ── */}
+
+          {/* Grand Total Footer */}
           {!isLoading && paginatedRows.length > 0 && (
-            <tfoot className="bg-gray-50/80 sticky bottom-0 z-10 border-t border-gray-200 shadow-[0_-1px_2px_rgba(0,0,0,0.02)] font-semibold text-gray-900">
-              <tr>
-                <td colSpan={7} className="px-5 py-3 text-right text-[13px] tracking-wide">
-                  GRAND TOTAL:
+            <tfoot>
+              <tr
+                style={{
+                  background: "var(--bg-elevated)",
+                  borderTop: "2px solid var(--border)",
+                  position: "sticky",
+                  bottom: 0,
+                }}
+              >
+                <td
+                  colSpan={7}
+                  style={{
+                    padding: "11px 16px",
+                    textAlign: "right",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Grand Total
                 </td>
-                <td className="pl-5 pr-12 py-3 text-right text-[14px] tabular-nums">
-                  <div className="inline-flex items-center gap-1.5 text-blue-700">
+                <td style={{ padding: "11px 20px 11px 16px", textAlign: "right" }}>
+                  <span
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 900,
+                      fontVariantNumeric: "tabular-nums",
+                      color: "var(--indigo-light)",
+                      letterSpacing: "-0.02em",
+                    }}
+                  >
                     {grandTotal.toLocaleString()}
-                  </div>
+                  </span>
                 </td>
               </tr>
             </tfoot>
@@ -579,64 +1027,124 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
         </table>
       </div>
 
-      {/* ── Modern Pagination ── */}
-      {totalPages > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-4 border-t border-gray-200 bg-white gap-4">
-          
-          <div className="flex items-center gap-3">
-            <span className="text-[13px] text-gray-500">
-              Showing <span className="font-semibold text-gray-900">{(page - 1) * pageSize + 1}</span> to <span className="font-semibold text-gray-900">{Math.min(page * pageSize, sortedRows.length)}</span> of <span className="font-semibold text-gray-900">{sortedRows.length}</span>
-            </span>
-            <select
-              value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-              className="text-[12px] font-medium border border-gray-200 bg-white text-gray-700 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all hover:bg-gray-50"
-            >
-              {PAGE_SIZES.map((s) => (
-                <option key={s} value={s}>{s} / page</option>
-              ))}
-            </select>
-          </div>
+      {/* ── Pagination ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "12px 18px",
+          borderTop: "1px solid var(--border)",
+          background: "var(--bg-card)",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        {/* Left: count + page size */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{(page - 1) * pageSize + 1}</span>
+            {" – "}
+            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{Math.min(page * pageSize, sortedRows.length)}</span>
+            {" of "}
+            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{sortedRows.length}</span>
+          </span>
 
-          <div className="flex items-center gap-1.5 bg-white">
-            <button
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page === 1}
-              className="w-8 h-8 rounded-md flex items-center justify-center text-gray-500 hover:text-gray-900 border border-transparent hover:border-gray-200 hover:bg-gray-50 disabled:opacity-30 transition-all"
-            >
-              <ArrowLeft size={14} />
-            </button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let p = i + 1;
-              if (totalPages > 5) {
-                if (page <= 3) p = i + 1;
-                else if (page >= totalPages - 2) p = totalPages - 4 + i;
-                else p = page - 2 + i;
-              }
-              return (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`w-8 h-8 rounded-md text-[13px] font-semibold transition-all border ${
-                    p === page
-                      ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                      : "bg-white text-gray-600 border-transparent hover:border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  {p}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setPage(Math.min(totalPages, page + 1))}
-              disabled={page === totalPages}
-              className="w-8 h-8 rounded-md flex items-center justify-center text-gray-500 hover:text-gray-900 border border-transparent hover:border-gray-200 hover:bg-gray-50 disabled:opacity-30 transition-all"
-            >
-              <ArrowRight size={14} />
-            </button>
-          </div>
+          <select
+            value={pageSize}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: "Inter, sans-serif",
+              border: "1.5px solid var(--border)",
+              background: "var(--bg-card)",
+              color: "var(--text-primary)",
+              borderRadius: 8,
+              padding: "4px 8px",
+              outline: "none",
+              cursor: "pointer",
+            }}
+          >
+            {PAGE_SIZES.map((s) => (
+              <option key={s} value={s}>{s} / page</option>
+            ))}
+          </select>
         </div>
-      )}
+
+        {/* Right: page buttons */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <button
+            onClick={() => setPage(Math.max(1, page - 1))}
+            disabled={page === 1}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              border: "1.5px solid var(--border)",
+              background: "var(--bg-card)",
+              color: page === 1 ? "var(--text-muted)" : "var(--text-primary)",
+              cursor: page === 1 ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: page === 1 ? 0.4 : 1,
+              transition: "all 0.12s",
+            }}
+          >
+            <ChevronLeft size={14} />
+          </button>
+
+          {pageNumbers.map((p, i) =>
+            p === "…" ? (
+              <span key={`ellipsis-${i}`} style={{ padding: "0 4px", color: "var(--text-muted)", fontSize: 13 }}>
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  border: `1.5px solid ${p === page ? "var(--indigo)" : "var(--border)"}`,
+                  background: p === page ? "var(--indigo)" : "var(--bg-card)",
+                  color: p === page ? "#fff" : "var(--text-primary)",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  boxShadow: p === page ? "0 2px 8px rgba(79,70,229,0.35)" : "none",
+                }}
+              >
+                {p}
+              </button>
+            )
+          )}
+
+          <button
+            onClick={() => setPage(Math.min(totalPages, page + 1))}
+            disabled={page === totalPages}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              border: "1.5px solid var(--border)",
+              background: "var(--bg-card)",
+              color: page === totalPages ? "var(--text-muted)" : "var(--text-primary)",
+              cursor: page === totalPages ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: page === totalPages ? 0.4 : 1,
+              transition: "all 0.12s",
+            }}
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

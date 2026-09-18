@@ -1,7 +1,7 @@
 "use client";
 
 import { AggregatedStats } from "@/lib/types";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Calendar, CalendarDays, BarChart3, Trophy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface StatCardsProps {
@@ -9,7 +9,7 @@ interface StatCardsProps {
   isLoading: boolean;
 }
 
-function useCountUp(target: number, duration = 900) {
+function useCountUp(target: number, duration = 1000) {
   const [value, setValue] = useState(0);
   const prev = useRef(0);
   useEffect(() => {
@@ -20,7 +20,7 @@ function useCountUp(target: number, duration = 900) {
     const tick = () => {
       const elapsed = Date.now() - start;
       const p = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
+      const eased = 1 - Math.pow(1 - p, 4);
       setValue(Math.round(from + (target - from) * eased));
       if (p < 1) requestAnimationFrame(tick);
     };
@@ -43,12 +43,13 @@ function TrendChip({ current, previous }: { current: number; previous: number })
         gap: 3,
         padding: "2px 7px",
         borderRadius: 99,
-        background: "rgba(255,255,255,0.2)",
-        fontSize: 11,
-        fontWeight: 600,
+        background: "rgba(255,255,255,0.22)",
+        fontSize: 10.5,
+        fontWeight: 700,
+        letterSpacing: "0.01em",
       }}
     >
-      {same ? <Minus size={10} /> : up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+      {same ? <Minus size={9} /> : up ? <TrendingUp size={9} /> : <TrendingDown size={9} />}
       {up ? "+" : ""}{pct}%
     </div>
   );
@@ -56,10 +57,13 @@ function TrendChip({ current, previous }: { current: number; previous: number })
 
 function SkeletonCard({ color }: { color: string }) {
   return (
-    <div className={`stat-card ${color}`} style={{ minHeight: 72, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '6px' }}>
-      <div style={{ height: 16, width: 16, background: "rgba(255,255,255,0.2)", borderRadius: 4, marginBottom: 8 }} />
-      <div style={{ height: 6, width: "60%", background: "rgba(255,255,255,0.15)", borderRadius: 2, marginBottom: 4 }} />
-      <div style={{ height: 14, width: "80%", background: "rgba(255,255,255,0.25)", borderRadius: 4 }} />
+    <div
+      className={`stat-card ${color}`}
+      style={{ minHeight: 90, display: "flex", flexDirection: "column", justifyContent: "center", padding: "14px 16px" }}
+    >
+      <div style={{ height: 10, width: "50%", background: "rgba(255,255,255,0.18)", borderRadius: 6, marginBottom: 10 }} />
+      <div style={{ height: 26, width: "65%", background: "rgba(255,255,255,0.26)", borderRadius: 6, marginBottom: 8 }} />
+      <div style={{ height: 10, width: "35%", background: "rgba(255,255,255,0.14)", borderRadius: 6 }} />
     </div>
   );
 }
@@ -68,33 +72,65 @@ interface CardDef {
   label: string;
   sub: string;
   color: string;
-  icon: string;
+  Icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
   value: number;
   prev?: number;
   extra?: string;
 }
 
-function StatCard({ label, sub, color, icon, value, prev, extra }: CardDef) {
+function StatCard({ label, sub, color, Icon, value, prev }: CardDef) {
   const display = useCountUp(value);
   return (
-    <div className={`stat-card ${color} fade-up`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '8px 4px', minHeight: 72, justifyContent: 'center' }}>
+    <div
+      className={`stat-card ${color} fade-up`}
+      style={{ display: "flex", flexDirection: "column", padding: "16px 18px", minHeight: 90 }}
+    >
+      {/* Icon + label row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+        <div
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 7,
+            background: "rgba(255,255,255,0.18)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Icon size={13} />
+        </div>
+        <span
+          style={{
+            fontSize: 10.5,
+            fontWeight: 700,
+            opacity: 0.88,
+            textTransform: "uppercase",
+            letterSpacing: "0.07em",
+          }}
+        >
+          {label}
+        </span>
+      </div>
+
+      {/* Big number */}
       <div
         style={{
-          width: 18, height: 18, borderRadius: 4,
-          background: "rgba(255,255,255,0.15)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 10, zIndex: 1, position: "relative", marginBottom: 4
+          fontSize: 28,
+          fontWeight: 900,
+          letterSpacing: "-0.04em",
+          lineHeight: 1,
+          marginBottom: 8,
+          fontVariantNumeric: "tabular-nums",
         }}
       >
-        {icon}
-      </div>
-      <div style={{ fontSize: 7, fontWeight: 700, opacity: 0.9, textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1, marginBottom: 4 }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1, marginBottom: 4 }}>
         {display.toLocaleString()}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+
+      {/* Sub + trend */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: "auto" }}>
+        <span style={{ fontSize: 11, opacity: 0.72, fontWeight: 500 }}>{sub}</span>
         {prev !== undefined && <TrendChip current={value} previous={prev} />}
       </div>
     </div>
@@ -106,10 +142,8 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
 
   if (isLoading || !stats) {
     return (
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(65px, 1fr))", gap: 6, width: "100%", maxWidth: 1200 }}>
-          {colors.map((c) => <SkeletonCard key={c} color={c} />)}
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
+        {colors.map((c) => <SkeletonCard key={c} color={c} />)}
       </div>
     );
   }
@@ -119,7 +153,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
       label: "Today",
       sub: "Pieces produced",
       color: "stat-purple",
-      icon: "📅",
+      Icon: Calendar,
       value: stats.todayPieces,
       prev: stats.yesterdayPieces,
     },
@@ -127,7 +161,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
       label: "This Week",
       sub: "Mon – Today",
       color: "stat-violet",
-      icon: "📆",
+      Icon: CalendarDays,
       value: stats.thisWeekPieces,
       prev: stats.lastWeekPieces,
     },
@@ -135,7 +169,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
       label: "This Month",
       sub: "Calendar month",
       color: "stat-red",
-      icon: "🗓️",
+      Icon: CalendarDays,
       value: stats.thisMonthPieces,
       prev: stats.lastMonthPieces,
     },
@@ -143,25 +177,22 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
       label: "This Quarter",
       sub: "Quarter total",
       color: "stat-amber",
-      icon: "📊",
+      Icon: BarChart3,
       value: stats.thisQuarterPieces,
       prev: stats.lastQuarterPieces,
     },
     {
       label: "All Time",
-      sub: "Grand total",
+      sub: `${stats.activeKarigars} active karigars`,
       color: "stat-green",
-      icon: "🏆",
+      Icon: Trophy,
       value: stats.allTimePieces,
-      extra: `${stats.activeKarigars} active karigars`,
     },
   ];
 
   return (
-    <div style={{ display: "flex", justifyContent: "center" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(65px, 1fr))", gap: 6, width: "100%", maxWidth: 1200 }}>
-        {cards.map((c) => <StatCard key={c.label} {...c} />)}
-      </div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
+      {cards.map((c) => <StatCard key={c.label} {...c} />)}
     </div>
   );
 }

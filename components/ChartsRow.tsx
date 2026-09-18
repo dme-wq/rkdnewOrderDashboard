@@ -10,8 +10,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
   Area,
   AreaChart,
 } from "recharts";
@@ -29,24 +27,16 @@ const KARIGAR_COLORS = [
 const tooltipStyle = {
   backgroundColor: "var(--bg-card)",
   border: "1px solid var(--border)",
-  borderRadius: 10,
-  padding: "8px 12px",
+  borderRadius: 12,
+  padding: "10px 14px",
   fontSize: 12,
+  fontFamily: "Inter, sans-serif",
   color: "var(--text-primary)",
-  boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
 };
 
 function SkeletonChart({ height = 200 }: { height?: number }) {
-  return <div className="skeleton" style={{ height, borderRadius: 8 }} />;
-}
-
-function SectionHeader({ title, sub }: { title: string; sub: string }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{title}</div>
-      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{sub}</div>
-    </div>
-  );
+  return <div className="skeleton" style={{ height, borderRadius: 10 }} />;
 }
 
 export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
@@ -54,13 +44,13 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
 
   if (isLoading || !stats) {
     return (
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
-        <div className="card" style={{ padding: 20 }}>
-          <div className="skeleton" style={{ height: 16, width: 160, borderRadius: 6, marginBottom: 16 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
+        <div className="card" style={{ padding: "20px 22px" }}>
+          <div className="skeleton" style={{ height: 16, width: 180, borderRadius: 6, marginBottom: 20 }} />
           <SkeletonChart height={200} />
         </div>
-        <div className="card" style={{ padding: 20 }}>
-          <div className="skeleton" style={{ height: 16, width: 120, borderRadius: 6, marginBottom: 16 }} />
+        <div className="card" style={{ padding: "20px 22px" }}>
+          <div className="skeleton" style={{ height: 16, width: 140, borderRadius: 6, marginBottom: 20 }} />
           <SkeletonChart height={200} />
         </div>
       </div>
@@ -72,7 +62,7 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
   );
 
   const barData = stats.dailyTrend.map((d) => ({
-    date: d.date, // User requested full dd-MMM-yyyy on the chart
+    date: d.date,
     total: d.totalPieces,
     ...d.byKarigar,
   }));
@@ -82,19 +72,44 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
     pieces: w.totalPieces,
   }));
 
+  const cardHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 18,
+    paddingBottom: 14,
+    borderBottom: "1px solid var(--border-light)",
+  };
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
       {/* Daily Bar Chart */}
-      <div className="card" style={{ padding: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-          <SectionHeader title="Daily Production" sub="Last 14 days — piece count" />
+      <div className="card" style={{ padding: "20px 22px" }}>
+        <div style={cardHeaderStyle}>
+          <div>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 800,
+                color: "var(--text-primary)",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Daily Production
+            </div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+              Last 14 days — piece count
+            </div>
+          </div>
+
+          {/* Mode toggle */}
           <div
             style={{
               display: "flex",
-              gap: 4,
-              background: "var(--bg)",
-              borderRadius: 8,
-              padding: 4,
+              gap: 2,
+              background: "var(--bg-elevated)",
+              borderRadius: 10,
+              padding: 3,
               border: "1px solid var(--border)",
             }}
           >
@@ -104,15 +119,18 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
                 id={`chart-${mode}`}
                 onClick={() => setBarMode(mode)}
                 style={{
-                  padding: "4px 10px",
-                  borderRadius: 6,
+                  padding: "5px 12px",
+                  borderRadius: 8,
                   border: "none",
-                  fontSize: 11,
-                  fontWeight: 600,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  fontFamily: "Inter, sans-serif",
                   cursor: "pointer",
-                  background: barMode === mode ? "#6366f1" : "transparent",
+                  letterSpacing: "-0.01em",
+                  transition: "all 0.18s cubic-bezier(0.34,1.56,0.64,1)",
+                  background: barMode === mode ? "var(--indigo)" : "transparent",
                   color: barMode === mode ? "#fff" : "var(--text-secondary)",
-                  transition: "all 0.15s",
+                  boxShadow: barMode === mode ? "0 2px 8px rgba(79,70,229,0.30)" : "none",
                 }}
               >
                 {mode === "total" ? "Total" : "By Karigar"}
@@ -121,19 +139,29 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
           </div>
         </div>
 
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={barData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }} barSize={barMode === "total" ? 18 : 8}>
+        <ResponsiveContainer width="100%" height={210}>
+          <BarChart data={barData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }} barSize={barMode === "total" ? 20 : 8}>
+            <defs>
+              <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
+                <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.85} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: "var(--text-muted)" }}
+              tick={{ fontSize: 10, fill: "var(--text-muted)", fontFamily: "Inter" }}
               axisLine={false}
               tickLine={false}
             />
-            <YAxis tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
+            <YAxis
+              tick={{ fontSize: 10, fill: "var(--text-muted)", fontFamily: "Inter" }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(99,102,241,0.06)", borderRadius: 6 }} />
             {barMode === "total" ? (
-              <Bar dataKey="total" fill="#6366f1" radius={[4, 4, 0, 0]} name="Pieces" />
+              <Bar dataKey="total" fill="url(#barGradient)" radius={[5, 5, 0, 0]} name="Pieces" />
             ) : (
               allKarigars.map((k, i) => (
                 <Bar
@@ -141,7 +169,7 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
                   dataKey={k}
                   stackId="a"
                   fill={KARIGAR_COLORS[i % KARIGAR_COLORS.length]}
-                  radius={i === allKarigars.length - 1 ? [4, 4, 0, 0] : undefined}
+                  radius={i === allKarigars.length - 1 ? [5, 5, 0, 0] : undefined}
                   name={k}
                 />
               ))
@@ -151,24 +179,41 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
       </div>
 
       {/* Weekly Area Chart */}
-      <div className="card" style={{ padding: 20 }}>
-        <SectionHeader title="Weekly Trend" sub="Last 8 weeks production" />
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={lineData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+      <div className="card" style={{ padding: "20px 22px" }}>
+        <div style={{ marginBottom: 18, paddingBottom: 14, borderBottom: "1px solid var(--border-light)" }}>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 800,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Weekly Trend
+          </div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>Last 8 weeks production</div>
+        </div>
+
+        <ResponsiveContainer width="100%" height={210}>
+          <AreaChart data={lineData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
             <defs>
               <linearGradient id="weeklyGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
                 <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="week"
-              tick={{ fontSize: 9, fill: "var(--text-muted)" }}
+              tick={{ fontSize: 9.5, fill: "var(--text-muted)", fontFamily: "Inter" }}
               axisLine={false}
               tickLine={false}
             />
-            <YAxis tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
+            <YAxis
+              tick={{ fontSize: 10, fill: "var(--text-muted)", fontFamily: "Inter" }}
+              axisLine={false}
+              tickLine={false}
+            />
             <Tooltip contentStyle={tooltipStyle} />
             <Area
               type="monotone"
@@ -177,7 +222,7 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
               strokeWidth={2.5}
               fill="url(#weeklyGradient)"
               dot={{ r: 4, fill: "#6366f1", stroke: "var(--bg-card)", strokeWidth: 2 }}
-              activeDot={{ r: 6 }}
+              activeDot={{ r: 6, fill: "#6366f1", stroke: "var(--bg-card)", strokeWidth: 2 }}
               name="Pieces"
             />
           </AreaChart>

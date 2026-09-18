@@ -1,6 +1,6 @@
 "use client";
 
-import { RefreshCw, Search, Bell, Sun, Moon } from "lucide-react";
+import { RefreshCw, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
@@ -50,56 +50,81 @@ export function Topbar({
 
   return (
     <div className="topbar">
-      {/* Left side: Logo & Title */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      {/* Left: Logo + Title */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <div
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: 10,
-            background: "#ffffff",
+            width: 42,
+            height: 42,
+            borderRadius: 12,
+            background: "#fff",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
             overflow: "hidden",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
             padding: 2,
+            border: "1px solid var(--border)",
           }}
         >
-          {/* Using img for simplicity since next/image needs import/config sometimes */}
           <img
             src="https://static.wixstatic.com/media/68b92a_d71e34133826499983234774dea1945b~mv2.png/v1/fill/w_186,h_156,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/RKD-Logo.png"
             alt="RKD Furnishings Logo"
             style={{ objectFit: "contain", width: "100%", height: "100%" }}
           />
         </div>
+
         <div>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.2 }}>
+          <h1
+            style={{
+              fontSize: 17,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              lineHeight: 1.2,
+              background: "linear-gradient(135deg, var(--text-primary) 0%, var(--indigo-light) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
             {title}
           </h1>
           {subtitle && (
-            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{subtitle}</p>
+            <p
+              style={{
+                fontSize: 11.5,
+                color: "var(--text-muted)",
+                marginTop: 1,
+                letterSpacing: "-0.01em",
+                fontWeight: 500,
+              }}
+            >
+              {subtitle}
+            </p>
           )}
         </div>
       </div>
 
       {/* Right actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        {/* Sync status */}
+        {/* Sync status badge */}
         {syncLabel && (
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 6,
-              padding: "4px 10px",
+              padding: "5px 12px",
               borderRadius: 99,
               fontSize: 12,
-              fontWeight: 500,
-              background: isError ? "rgba(239,68,68,0.1)" : "rgba(16,185,129,0.1)",
-              color: isError ? "#ef4444" : "#10b981",
-              border: `1px solid ${isError ? "rgba(239,68,68,0.2)" : "rgba(16,185,129,0.2)"}`,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              background: isError
+                ? "rgba(225,29,72,0.08)"
+                : "rgba(5,150,105,0.08)",
+              color: isError ? "#e11d48" : "#059669",
+              border: `1px solid ${isError ? "rgba(225,29,72,0.2)" : "rgba(5,150,105,0.2)"}`,
             }}
           >
             {isLoading ? (
@@ -114,23 +139,11 @@ export function Topbar({
         {/* Refresh */}
         <button
           id="topbar-refresh"
+          className="topbar-btn"
           onClick={onRefresh}
           disabled={isLoading}
           title="Refresh data"
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 8,
-            border: "1px solid var(--border)",
-            background: "var(--bg-card)",
-            cursor: isLoading ? "not-allowed" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--text-secondary)",
-            opacity: isLoading ? 0.5 : 1,
-            transition: "all 0.15s",
-          }}
+          style={{ opacity: isLoading ? 0.5 : 1, cursor: isLoading ? "not-allowed" : "pointer" }}
         >
           <RefreshCw size={14} style={isLoading ? { animation: "spin 1s linear infinite" } : {}} />
         </button>
@@ -139,26 +152,13 @@ export function Topbar({
         {mounted && (
           <button
             id="topbar-theme-toggle"
+            className="topbar-btn"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             title="Toggle theme"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 8,
-              border: "1px solid var(--border)",
-              background: "var(--bg-card)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--text-secondary)",
-              transition: "all 0.15s",
-            }}
           >
             {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
           </button>
         )}
-
       </div>
     </div>
   );
