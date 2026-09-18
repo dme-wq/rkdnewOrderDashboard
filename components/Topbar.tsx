@@ -1,8 +1,8 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { RefreshCw, Sun, Moon, Calendar, CalendarDays, BarChart3, Trophy, Layers } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
 import { AggregatedStats } from "@/lib/types";
 
 interface TopbarProps {
@@ -13,8 +13,35 @@ interface TopbarProps {
   stats: AggregatedStats | null;
 }
 
-// ── Stat Chip inside Topbar ───────────────────────────────────────────────────
+// ── Animated count-up / count-down hook ─────────────────────────────────────
+function useCountUp(target: number, duration = 700) {
+  const [value, setValue] = useState(0);
+  const prevRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    if (target === prevRef.current) return;
+    const from = prevRef.current;
+    prevRef.current = target;
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 4); // ease-out-quart
+      setValue(Math.round(from + (target - from) * eased));
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+
+  return value;
+}
+
+// ── Single glowing circle chip ───────────────────────────────────────────────
 interface ChipDef {
   label: string;
   value: number;
@@ -23,91 +50,90 @@ interface ChipDef {
   glow: string;
 }
 
-function useCountUp(target: number, duration = 800) {
-  const [value, setValue] = useState(0);
-  const prev = useRef(0);
-  useEffect(() => {
-    if (target === prev.current) return;
-    prev.current = target;
-    const start = Date.now();
-    const from = value;
-    const tick = () => {
-      const elapsed = Date.now() - start;
-      const p = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 4);
-      setValue(Math.round(from + (target - from) * eased));
-      if (p < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target]);
-  return value;
-}
-
-// Need useRef
-import { useRef } from "react";
-
 function StatChip({ label, value, Icon, gradient, glow }: ChipDef) {
   const display = useCountUp(value);
+
   return (
     <div
       style={{
         background: gradient,
-        boxShadow: `0 0 14px ${glow}, 0 2px 8px ${glow}`,
-        borderRadius: 14,
-        padding: "5px 10px 6px",
+        boxShadow: `0 0 16px ${glow}, 0 3px 10px ${glow}`,
+        borderRadius: "50%",
+        width: 82,
+        height: 82,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 1,
+        justifyContent: "center",
         color: "#fff",
         cursor: "default",
-        minWidth: 62,
         position: "relative",
         overflow: "hidden",
-        transition: "transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease",
         flexShrink: 0,
+        transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease",
+        gap: 1,
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.transform = "translateY(-2px) scale(1.06)";
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 22px ${glow}, 0 6px 16px ${glow}`;
+        const el = e.currentTarget as HTMLElement;
+        el.style.transform = "scale(1.10)";
+        el.style.boxShadow = `0 0 28px ${glow}, 0 6px 20px ${glow}`;
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.transform = "translateY(0) scale(1)";
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 14px ${glow}, 0 2px 8px ${glow}`;
+        const el = e.currentTarget as HTMLElement;
+        el.style.transform = "scale(1)";
+        el.style.boxShadow = `0 0 16px ${glow}, 0 3px 10px ${glow}`;
       }}
     >
-      {/* Shine overlay */}
+      {/* Inner shine */}
       <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 60%)",
+        position: "absolute", inset: 0, borderRadius: "50%",
+        background: "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, transparent 55%)",
         pointerEvents: "none",
-        borderRadius: 14,
       }} />
 
+      {/* Inner dark ring for depth */}
       <div style={{
-        width: 16, height: 16, borderRadius: 6,
+        position: "absolute", inset: 3, borderRadius: "50%",
+        border: "1.5px solid rgba(255,255,255,0.14)",
+        pointerEvents: "none",
+      }} />
+
+      {/* Icon */}
+      <div style={{
+        width: 20, height: 20, borderRadius: "50%",
         background: "rgba(255,255,255,0.22)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 1, flexShrink: 0,
+        zIndex: 1, flexShrink: 0, marginBottom: 1,
       }}>
-        <Icon size={9} />
+        <Icon size={11} />
       </div>
 
-      <span style={{
-        fontSize: 7, fontWeight: 700, textTransform: "uppercase",
-        letterSpacing: "0.07em", opacity: 0.78, lineHeight: 1, zIndex: 1,
-        whiteSpace: "nowrap",
-      }}>
-        {label}
-      </span>
-
+      {/* Number — animated */}
       <div style={{
-        fontSize: 17, fontWeight: 900, letterSpacing: "-0.04em",
-        lineHeight: 1, fontVariantNumeric: "tabular-nums", zIndex: 1,
+        fontSize: 19,
+        fontWeight: 900,
+        letterSpacing: "-0.04em",
+        lineHeight: 1,
+        fontVariantNumeric: "tabular-nums",
+        zIndex: 1,
       }}>
         {display.toLocaleString()}
       </div>
+
+      {/* Label */}
+      <span style={{
+        fontSize: 7,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+        opacity: 0.78,
+        lineHeight: 1,
+        zIndex: 1,
+        whiteSpace: "nowrap",
+        marginTop: 1,
+      }}>
+        {label}
+      </span>
     </div>
   );
 }
@@ -117,19 +143,27 @@ function SkeletonChip({ gradient, glow }: { gradient: string; glow: string }) {
     <div style={{
       background: gradient,
       boxShadow: `0 0 10px ${glow}`,
-      borderRadius: 14,
-      padding: "5px 10px 6px",
-      display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-      minWidth: 62, opacity: 0.55,
+      borderRadius: "50%",
+      width: 82, height: 82,
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      gap: 4, opacity: 0.45, flexShrink: 0,
     }}>
-      <div style={{ width: 16, height: 16, background: "rgba(255,255,255,0.22)", borderRadius: 6 }} />
-      <div style={{ height: 6, width: "60%", background: "rgba(255,255,255,0.20)", borderRadius: 3 }} />
-      <div style={{ height: 14, width: "50%", background: "rgba(255,255,255,0.28)", borderRadius: 3 }} />
+      <div style={{ width: 20, height: 20, background: "rgba(255,255,255,0.25)", borderRadius: "50%" }} />
+      <div style={{ height: 6, width: "52%", background: "rgba(255,255,255,0.22)", borderRadius: 3 }} />
+      <div style={{ height: 14, width: "44%", background: "rgba(255,255,255,0.30)", borderRadius: 3 }} />
     </div>
   );
 }
 
-// ── Topbar ────────────────────────────────────────────────────────────────────
+// ── Topbar ───────────────────────────────────────────────────────────────────
+const CHIP_CONFIG = [
+  { label: "Today",    key: "todayPieces"       as const, Icon: Calendar,     gradient: "linear-gradient(140deg,#3730a3,#6366f1)", glow: "rgba(99,102,241,0.50)"  },
+  { label: "This Week",key: "thisWeekPieces"    as const, Icon: CalendarDays, gradient: "linear-gradient(140deg,#5b21b6,#8b5cf6)", glow: "rgba(139,92,246,0.50)" },
+  { label: "Month",    key: "thisMonthPieces"   as const, Icon: Layers,       gradient: "linear-gradient(140deg,#9f1239,#e11d48)", glow: "rgba(225,29,72,0.50)"  },
+  { label: "Quarter",  key: "thisQuarterPieces" as const, Icon: BarChart3,    gradient: "linear-gradient(140deg,#92400e,#d97706)", glow: "rgba(217,119,6,0.50)"  },
+  { label: "All Time", key: "allTimePieces"     as const, Icon: Trophy,       gradient: "linear-gradient(140deg,#065f46,#059669)", glow: "rgba(5,150,105,0.50)"  },
+];
 
 export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: TopbarProps) {
   const { theme, setTheme } = useTheme();
@@ -157,31 +191,15 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
     ? secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo / 60)}m ago`
     : "";
 
-  const CHIPS: ChipDef[] = stats
-    ? [
-        { label: "Today",    value: stats.todayPieces,       Icon: Calendar,     gradient: "linear-gradient(135deg,#4338ca,#6366f1)", glow: "rgba(99,102,241,0.5)" },
-        { label: "This Week",value: stats.thisWeekPieces,    Icon: CalendarDays, gradient: "linear-gradient(135deg,#6d28d9,#8b5cf6)", glow: "rgba(139,92,246,0.5)" },
-        { label: "Month",    value: stats.thisMonthPieces,   Icon: Layers,       gradient: "linear-gradient(135deg,#be123c,#e11d48)", glow: "rgba(225,29,72,0.5)"  },
-        { label: "Quarter",  value: stats.thisQuarterPieces, Icon: BarChart3,    gradient: "linear-gradient(135deg,#b45309,#d97706)", glow: "rgba(217,119,6,0.5)"  },
-        { label: "All Time", value: stats.allTimePieces,     Icon: Trophy,       gradient: "linear-gradient(135deg,#047857,#059669)", glow: "rgba(5,150,105,0.5)"  },
-      ]
-    : [];
-
-  const SKELETON_CHIPS = [
-    { gradient: "linear-gradient(135deg,#4338ca,#6366f1)", glow: "rgba(99,102,241,0.4)" },
-    { gradient: "linear-gradient(135deg,#6d28d9,#8b5cf6)", glow: "rgba(139,92,246,0.4)" },
-    { gradient: "linear-gradient(135deg,#be123c,#e11d48)", glow: "rgba(225,29,72,0.4)"  },
-    { gradient: "linear-gradient(135deg,#b45309,#d97706)", glow: "rgba(217,119,6,0.4)"  },
-    { gradient: "linear-gradient(135deg,#047857,#059669)", glow: "rgba(5,150,105,0.4)"  },
-  ];
-
   return (
-    <div className="topbar" style={{ height: 68, paddingLeft: 20, paddingRight: 20 }}>
-
+    <div
+      className="topbar"
+      style={{ height: 100, paddingLeft: 20, paddingRight: 20, alignItems: "center" }}
+    >
       {/* LEFT: Logo + Title */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 11,
+          width: 42, height: 42, borderRadius: 12,
           background: "#fff", padding: 2,
           border: "1px solid var(--border)",
           boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
@@ -196,14 +214,9 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
         </div>
         <div>
           <h1 style={{
-            fontSize: 15,
-            fontWeight: 800,
-            letterSpacing: "-0.03em",
-            lineHeight: 1.2,
+            fontSize: 15, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2,
             background: "linear-gradient(135deg, var(--text-primary) 0%, var(--indigo-light) 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             whiteSpace: "nowrap",
           }}>
             RKD New Order Dashboard
@@ -214,18 +227,27 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
         </div>
       </div>
 
-      {/* CENTER: Stat Chips */}
+      {/* CENTER: Stat Circle Chips */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 6,
-        flex: 1, justifyContent: "center", padding: "0 16px",
+        display: "flex", alignItems: "center", gap: 10,
+        flex: 1, justifyContent: "center", padding: "0 20px",
       }}>
         {(isLoading && !stats)
-          ? SKELETON_CHIPS.map((s, i) => <SkeletonChip key={i} {...s} />)
-          : CHIPS.map((c) => <StatChip key={c.label} {...c} />)
+          ? CHIP_CONFIG.map((c, i) => <SkeletonChip key={i} gradient={c.gradient} glow={c.glow} />)
+          : CHIP_CONFIG.map((c) => (
+              <StatChip
+                key={c.label}
+                label={c.label}
+                value={stats ? stats[c.key] : 0}
+                Icon={c.Icon}
+                gradient={c.gradient}
+                glow={c.glow}
+              />
+            ))
         }
       </div>
 
-      {/* RIGHT: Sync + buttons */}
+      {/* RIGHT: Sync badge + action buttons */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
         {syncLabel && (
           <div style={{
@@ -246,11 +268,8 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
         )}
 
         <button
-          id="topbar-refresh"
-          className="topbar-btn"
-          onClick={onRefresh}
-          disabled={isLoading}
-          title="Refresh data"
+          id="topbar-refresh" className="topbar-btn" onClick={onRefresh}
+          disabled={isLoading} title="Refresh data"
           style={{ opacity: isLoading ? 0.5 : 1, cursor: isLoading ? "not-allowed" : "pointer" }}
         >
           <RefreshCw size={13} style={isLoading ? { animation: "spin 1s linear infinite" } : {}} />
@@ -258,10 +277,8 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
 
         {mounted && (
           <button
-            id="topbar-theme-toggle"
-            className="topbar-btn"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            title="Toggle theme"
+            id="topbar-theme-toggle" className="topbar-btn"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title="Toggle theme"
           >
             {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
           </button>

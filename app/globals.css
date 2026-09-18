@@ -180,7 +180,7 @@ body {
 .topbar {
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
-  height: 64px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -188,12 +188,12 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 1px 0 var(--border), 0 4px 12px rgba(0,0,0,0.04);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(0,0,0,0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .dark .topbar {
-  background: rgba(15,22,35,0.85);
+  background: rgba(15,22,35,0.88);
 }
 
 /* ── Topbar icon button ─── */
