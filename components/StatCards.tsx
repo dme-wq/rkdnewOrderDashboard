@@ -82,9 +82,9 @@ function StatCard({ label, sub, gradIdx, Icon, value, prev }: CardDef) {
       className="fade-up"
       style={{
         background: `linear-gradient(140deg, ${g.from} 0%, ${g.to} 100%)`,
-        boxShadow: `0 4px 16px ${g.shadow}`,
-        borderRadius: 14,
-        padding: "12px 14px",
+        boxShadow: `0 3px 12px ${g.shadow}`,
+        borderRadius: 20,
+        padding: "8px 10px 10px",
         color: "#fff",
         position: "relative",
         overflow: "hidden",
@@ -92,65 +92,70 @@ function StatCard({ label, sub, gradIdx, Icon, value, prev }: CardDef) {
         transition: "transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease",
         display: "flex",
         flexDirection: "column",
-        gap: 6,
+        alignItems: "center",
+        textAlign: "center",
+        gap: 4,
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.transform = "translateY(-3px) scale(1.015)";
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 10px 28px ${g.shadow}`;
+        (e.currentTarget as HTMLElement).style.transform = "translateY(-3px) scale(1.03)";
+        (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 22px ${g.shadow}`;
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.transform = "translateY(0) scale(1)";
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 16px ${g.shadow}`;
+        (e.currentTarget as HTMLElement).style.boxShadow = `0 3px 12px ${g.shadow}`;
       }}
     >
       {/* Decorative orb */}
       <div
         style={{
           position: "absolute",
-          top: -18,
-          right: -18,
-          width: 70,
-          height: 70,
+          top: -14,
+          right: -14,
+          width: 52,
+          height: 52,
           borderRadius: "50%",
           background: "rgba(255,255,255,0.10)",
           pointerEvents: "none",
         }}
       />
 
-      {/* Top row: icon + label */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, zIndex: 1, position: "relative" }}>
-        <div
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 7,
-            background: "rgba(255,255,255,0.18)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Icon size={12} />
-        </div>
-        <span
-          style={{
-            fontSize: 9.5,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.07em",
-            opacity: 0.85,
-            lineHeight: 1,
-          }}
-        >
-          {label}
-        </span>
+      {/* Icon */}
+      <div
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 8,
+          background: "rgba(255,255,255,0.20)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1,
+          position: "relative",
+        }}
+      >
+        <Icon size={12} />
       </div>
+
+      {/* Label */}
+      <span
+        style={{
+          fontSize: 8.5,
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          opacity: 0.82,
+          lineHeight: 1,
+          zIndex: 1,
+          position: "relative",
+        }}
+      >
+        {label}
+      </span>
 
       {/* Big number */}
       <div
         style={{
-          fontSize: 24,
+          fontSize: 20,
           fontWeight: 900,
           letterSpacing: "-0.04em",
           lineHeight: 1,
@@ -162,17 +167,9 @@ function StatCard({ label, sub, gradIdx, Icon, value, prev }: CardDef) {
         {display.toLocaleString()}
       </div>
 
-      {/* Sub + trend row */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 5,
-          zIndex: 1,
-          position: "relative",
-        }}
-      >
-        <span style={{ fontSize: 9.5, opacity: 0.68, fontWeight: 500, flex: 1, lineHeight: 1 }}>
+      {/* Sub + trend */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, zIndex: 1, position: "relative" }}>
+        <span style={{ fontSize: 8.5, opacity: 0.65, fontWeight: 500, lineHeight: 1 }}>
           {sub}
         </span>
         {prev !== undefined && <TrendChip current={value} previous={prev} />}
@@ -187,17 +184,19 @@ function SkeletonCard({ gradIdx }: { gradIdx: number }) {
     <div
       style={{
         background: `linear-gradient(140deg, ${g.from} 0%, ${g.to} 100%)`,
-        borderRadius: 14,
-        padding: "12px 14px",
+        borderRadius: 20,
+        padding: "8px 10px 10px",
         display: "flex",
         flexDirection: "column",
-        gap: 6,
+        alignItems: "center",
+        gap: 4,
         opacity: 0.6,
       }}
     >
-      <div style={{ height: 10, width: "55%", background: "rgba(255,255,255,0.20)", borderRadius: 5 }} />
-      <div style={{ height: 22, width: "70%", background: "rgba(255,255,255,0.28)", borderRadius: 5 }} />
-      <div style={{ height: 9, width: "40%", background: "rgba(255,255,255,0.15)", borderRadius: 5 }} />
+      <div style={{ height: 24, width: 24, background: "rgba(255,255,255,0.20)", borderRadius: 8 }} />
+      <div style={{ height: 8, width: "55%", background: "rgba(255,255,255,0.20)", borderRadius: 4 }} />
+      <div style={{ height: 18, width: "50%", background: "rgba(255,255,255,0.28)", borderRadius: 4 }} />
+      <div style={{ height: 8, width: "40%", background: "rgba(255,255,255,0.14)", borderRadius: 4 }} />
     </div>
   );
 }
