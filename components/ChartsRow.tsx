@@ -159,7 +159,7 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(99,102,241,0.06)", borderRadius: 6 }} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
             {barMode === "total" ? (
               <Bar dataKey="total" fill="url(#barGradient)" radius={[5, 5, 0, 0]} name="Pieces" />
             ) : (
