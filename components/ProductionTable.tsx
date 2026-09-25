@@ -305,10 +305,14 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
     borderBottom: "1px solid var(--border)",
     whiteSpace: "nowrap",
     userSelect: "none",
+    position: "sticky",
+    top: 0,
+    zIndex: 10,
+    textAlign: "center",
   };
   const thSortable: React.CSSProperties = { ...thBase, cursor: "pointer" };
-  const thRight: React.CSSProperties = { ...thBase, textAlign: "right" };
-  const thSortRight: React.CSSProperties = { ...thSortable, textAlign: "right" };
+  const thRight: React.CSSProperties = { ...thBase, textAlign: "center" };
+  const thSortRight: React.CSSProperties = { ...thSortable, textAlign: "center" };
 
   const tdBase: React.CSSProperties = {
     padding: "12px 14px",
@@ -316,6 +320,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
     fontSize: 13,
     color: "var(--text-primary)",
     verticalAlign: "middle",
+    textAlign: "center",
   };
 
   const pageNums = useMemo(() => {
@@ -528,7 +533,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       </div>
 
       {/* ── Table ── */}
-      <div style={{ overflowX: "auto" }}>
+      <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "calc(100vh - 280px)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
 
           {/* Header */}
@@ -536,29 +541,29 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
             <tr>
               <th style={{ ...thBase, width: 50, paddingLeft: 18, textAlign: "center" }}>#</th>
               <th style={{ ...thSortable, width: 110 }} onClick={() => handleSort("Date")}>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   Date <SortIcon dir={sortKey === "Date" ? sortDir : "none"} />
                 </div>
               </th>
               <th style={{ ...thSortable, width: "16%" }} onClick={() => handleSort("Buyer PO Number" as SortKey)}>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   PO Number <SortIcon dir={sortKey === "Buyer PO Number" ? sortDir : "none"} />
                 </div>
               </th>
               <th style={{ ...thSortable, width: "auto" }} onClick={() => handleSort("Design Name" as SortKey)}>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   Design <SortIcon dir={sortKey === "Design Name" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={{ ...thBase, width: "12%" }}>Color</th>
-              <th style={{ ...thBase, width: "12%" }}>Size</th>
+              <th style={{ ...thBase, width: "12%", textAlign: "center" }}>Color</th>
+              <th style={{ ...thBase, width: "12%", textAlign: "center" }}>Size</th>
               <th style={{ ...thSortable, width: "24%" }} onClick={() => handleSort("Name of Karigar 1" as SortKey)}>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   Karigar <SortIcon dir={sortKey === "Name of Karigar 1" ? sortDir : "none"} />
                 </div>
               </th>
               <th style={{ ...thSortRight, width: 160 }} onClick={() => handleSort("dailyPiecesMade")}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   <SortIcon dir={sortKey === "dailyPiecesMade" ? sortDir : "none"} />
                   Karigar Acct (Pcs)
                 </div>
@@ -657,7 +662,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                     <div style={{
                       fontSize: 13, fontWeight: 600,
                       color: "var(--text-primary)",
-                      maxWidth: 240,
+                      maxWidth: 240, margin: "0 auto",
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }} title={row["Design Name"] ?? ""}>
                       {row["Design Name"] || "—"}
@@ -666,7 +671,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
                   {/* Color */}
                   <td style={{ ...tdBase, width: 100 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                       {row["Yarn Color"] && row["Yarn Color"] !== "-" && row["Yarn Color"] !== "" ? (
                         <>
                           <div style={{
@@ -700,7 +705,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
                   {/* Karigar */}
                   <td style={{ ...tdBase, minWidth: 160 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
                       <div style={{
                         width: 32, height: 32, borderRadius: 10,
                         background: avColor.bg, color: avColor.text,
@@ -711,7 +716,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                       }}>
                         {initials(row.karigarInfo.name || "?")}
                       </div>
-                      <div style={{ minWidth: 0 }}>
+                      <div style={{ minWidth: 0, textAlign: "left" }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.2, whiteSpace: "nowrap" }}>
                           {row.karigarInfo.name || "—"}
                         </div>
@@ -725,10 +730,10 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                   </td>
 
                   {/* Karigar Account Pieces */}
-                  <td style={{ ...tdBase, textAlign: "right", paddingRight: 20 }}>
+                  <td style={{ ...tdBase, textAlign: "center", paddingRight: 14 }}>
                     {pieces > 0 ? (
                       <div style={{
-                        display: "inline-flex", alignItems: "center", gap: 5,
+                        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
                         padding: "5px 13px", borderRadius: 99,
                         background: "linear-gradient(135deg,rgba(5,150,105,0.12),rgba(5,150,105,0.06))",
                         border: "1px solid rgba(5,150,105,0.22)",
