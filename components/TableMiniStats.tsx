@@ -58,10 +58,10 @@ function MiniChip({
       id={id}
       style={{
         background: gradient,
-        boxShadow: `0 0 10px ${glow}, 0 2px 7px ${glow}`,
-        borderRadius: "50%",
-        width: 42,
-        height: 42,
+        boxShadow: `0 2px 12px ${glow}, 0 4px 10px ${glow}`,
+        borderRadius: 16,
+        width: 62,
+        height: 62,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -76,41 +76,41 @@ function MiniChip({
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.transform = "scale(1.12)";
-        el.style.boxShadow = `0 0 18px ${glow}, 0 4px 14px ${glow}`;
+        el.style.transform = "scale(1.10)";
+        el.style.boxShadow = `0 4px 20px ${glow}, 0 8px 18px ${glow}`;
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLElement;
         el.style.transform = "scale(1)";
-        el.style.boxShadow = `0 0 10px ${glow}, 0 2px 7px ${glow}`;
+        el.style.boxShadow = `0 2px 12px ${glow}, 0 4px 10px ${glow}`;
       }}
     >
       {/* Inner shine */}
       <div style={{
-        position: "absolute", inset: 0, borderRadius: "50%",
+        position: "absolute", inset: 0, borderRadius: 16,
         background: "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, transparent 55%)",
         pointerEvents: "none",
       }} />
       {/* Inner ring for depth */}
       <div style={{
-        position: "absolute", inset: 2, borderRadius: "50%",
+        position: "absolute", inset: 2, borderRadius: 14,
         border: "1px solid rgba(255,255,255,0.14)",
         pointerEvents: "none",
       }} />
 
       {/* Icon */}
       <div style={{
-        width: 11, height: 11, borderRadius: "50%",
+        width: 16, height: 16, borderRadius: "50%",
         background: "rgba(255,255,255,0.20)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 1, flexShrink: 0, marginBottom: 1,
+        zIndex: 1, flexShrink: 0, marginBottom: 2,
       }}>
-        <Icon size={6} />
+        <Icon size={9} />
       </div>
 
       {/* Number */}
       <div style={{
-        fontSize: 10,
+        fontSize: 15,
         fontWeight: 900,
         letterSpacing: "-0.04em",
         lineHeight: 1,
@@ -122,15 +122,15 @@ function MiniChip({
 
       {/* Label */}
       <span style={{
-        fontSize: 4.5,
-        fontWeight: 700,
+        fontSize: 6,
+        fontWeight: 800,
         textTransform: "uppercase",
         letterSpacing: "0.06em",
-        opacity: 0.80,
+        opacity: 0.85,
         lineHeight: 1,
         zIndex: 1,
         whiteSpace: "nowrap",
-        marginTop: 1,
+        marginTop: 2,
       }}>
         {label}
       </span>
@@ -142,9 +142,9 @@ function SkeletonMiniChip({ gradient, glow }: { gradient: string; glow: string }
   return (
     <div style={{
       background: gradient,
-      boxShadow: `0 0 8px ${glow}`,
-      borderRadius: "50%",
-      width: 42, height: 42,
+      boxShadow: `0 2px 12px ${glow}`,
+      borderRadius: 16,
+      width: 62, height: 62,
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
       opacity: 0.4, flexShrink: 0,
@@ -172,46 +172,43 @@ export function TableMiniStats({
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        padding: "8px 14px",
-        borderRadius: 14,
+        padding: "12px 18px",
+        borderRadius: 18,
         background: "var(--bg-card)",
         border: "1px solid var(--border)",
-        boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+        boxShadow: "0 2px 14px rgba(0,0,0,0.05)",
       }}
     >
-      {/* Filter indicator */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 5,
-          padding: "3px 8px",
-          borderRadius: 8,
-          background: hasFilter ? "rgba(99,102,241,0.10)" : "var(--bg-elevated)",
-          border: `1px solid ${hasFilter ? "rgba(99,102,241,0.22)" : "var(--border)"}`,
-          flexShrink: 0,
-        }}
-      >
-        <Filter size={10} color={hasFilter ? "#6366f1" : "var(--text-muted)"} />
-        <span
+      {/* Left section (Filter indicator) */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
+        <div
           style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: hasFilter ? "#6366f1" : "var(--text-muted)",
-            letterSpacing: "-0.01em",
-            whiteSpace: "nowrap",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "5px 10px",
+            borderRadius: 8,
+            background: hasFilter ? "rgba(99,102,241,0.10)" : "var(--bg-elevated)",
+            border: `1px solid ${hasFilter ? "rgba(99,102,241,0.22)" : "var(--border)"}`,
           }}
         >
-          {hasFilter ? "Filtered" : "All Data"}
-        </span>
+          <Filter size={12} color={hasFilter ? "#6366f1" : "var(--text-muted)"} />
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: hasFilter ? "#6366f1" : "var(--text-muted)",
+              letterSpacing: "-0.01em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {hasFilter ? "Filtered" : "All Data"}
+          </span>
+        </div>
       </div>
 
-      {/* Separator */}
-      <div style={{ width: 1, height: 30, background: "var(--border)", flexShrink: 0 }} />
-
-      {/* Mini Chips */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* Center section (Mini Chips) */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         {MINI_CHIP_CONFIG.map((c) =>
           isLoading ? (
             <SkeletonMiniChip key={c.id} gradient={c.gradient} glow={c.glow} />
@@ -229,19 +226,19 @@ export function TableMiniStats({
         )}
       </div>
 
-      {/* Right label */}
-      <span
-        style={{
-          fontSize: 10,
-          fontWeight: 500,
-          color: "var(--text-muted)",
-          letterSpacing: "-0.01em",
-          marginLeft: "auto",
-          whiteSpace: "nowrap",
-        }}
-      >
-        Table Summary
-      </span>
-    </div>
+      {/* Right section (Label) */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 500,
+            color: "var(--text-muted)",
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Table Summary
+        </span>
+      </div>
   );
 }

@@ -3,18 +3,9 @@
 import { ProcessedRow, ActiveFilters, DatePreset } from "@/lib/types";
 import { exportToCSV, getDateRangeForPreset } from "@/lib/transform";
 import {
-  Search,
-  Download,
-  ChevronUp,
-  ChevronDown,
-  ChevronsUpDown,
-  ChevronLeft,
-  ChevronRight,
-  PackageOpen,
-  SlidersHorizontal,
-  Check,
-  CalendarRange,
-  X,
+  Search, Download, ChevronUp, ChevronDown, ChevronsUpDown,
+  ChevronLeft, ChevronRight, PackageOpen, Check, CalendarRange,
+  X, Filter, ArrowUpDown, SlidersHorizontal,
 } from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 
@@ -29,7 +20,7 @@ interface ProductionTableProps {
 type SortKey = keyof ProcessedRow | "poProgress";
 type SortDir = "asc" | "desc" | "none";
 
-const PAGE_SIZES = [20, 50, 100];
+const PAGE_SIZES = [10, 20, 50, 100];
 const DATE_PRESETS: { label: string; value: DatePreset | "custom" }[] = [
   { label: "Today", value: "today" },
   { label: "This Week", value: "thisWeek" },
@@ -38,223 +29,174 @@ const DATE_PRESETS: { label: string; value: DatePreset | "custom" }[] = [
   { label: "Custom", value: "custom" },
 ];
 
-// Karigar avatar color palette
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
-  { bg: "rgba(99,102,241,0.15)", text: "#6366f1" },
-  { bg: "rgba(139,92,246,0.15)", text: "#8b5cf6" },
-  { bg: "rgba(16,185,129,0.15)", text: "#10b981" },
-  { bg: "rgba(59,130,246,0.15)", text: "#3b82f6" },
-  { bg: "rgba(245,158,11,0.15)", text: "#f59e0b" },
-  { bg: "rgba(236,72,153,0.15)", text: "#ec4899" },
-  { bg: "rgba(6,182,212,0.15)", text: "#06b6d4" },
-  { bg: "rgba(239,68,68,0.15)", text: "#ef4444" },
+  { bg: "linear-gradient(135deg,#3730a3,#6366f1)", text: "#fff" },
+  { bg: "linear-gradient(135deg,#5b21b6,#8b5cf6)", text: "#fff" },
+  { bg: "linear-gradient(135deg,#065f46,#059669)", text: "#fff" },
+  { bg: "linear-gradient(135deg,#1e40af,#3b82f6)", text: "#fff" },
+  { bg: "linear-gradient(135deg,#92400e,#d97706)", text: "#fff" },
+  { bg: "linear-gradient(135deg,#9d174d,#ec4899)", text: "#fff" },
+  { bg: "linear-gradient(135deg,#164e63,#06b6d4)", text: "#fff" },
+  { bg: "linear-gradient(135deg,#7f1d1d,#ef4444)", text: "#fff" },
 ];
 
-function getAvatarColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+const PO_COLORS = [
+  { bg: "rgba(99,102,241,0.12)", text: "#6366f1", border: "rgba(99,102,241,0.25)" },
+  { bg: "rgba(139,92,246,0.12)", text: "#8b5cf6", border: "rgba(139,92,246,0.25)" },
+  { bg: "rgba(5,150,105,0.12)",  text: "#059669", border: "rgba(5,150,105,0.25)"  },
+  { bg: "rgba(59,130,246,0.12)", text: "#3b82f6", border: "rgba(59,130,246,0.25)" },
+  { bg: "rgba(217,119,6,0.12)",  text: "#d97706", border: "rgba(217,119,6,0.25)"  },
+  { bg: "rgba(236,72,153,0.12)", text: "#ec4899", border: "rgba(236,72,153,0.25)" },
+];
+
+function hashStr(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = s.charCodeAt(i) + ((h << 5) - h);
+  return Math.abs(h);
 }
 
-function SkeletonRow() {
+function getAvatarColor(name: string) {
+  return AVATAR_COLORS[hashStr(name) % AVATAR_COLORS.length];
+}
+function getPoColor(po: string) {
+  return PO_COLORS[hashStr(po) % PO_COLORS.length];
+}
+function initials(name: string) {
+  return name.split(" ").map(w => w[0] ?? "").join("").slice(0, 2).toUpperCase();
+}
+function formatDate(d: string) {
+  const months: Record<string, string> = {
+    Jan:"Jan",Feb:"Feb",Mar:"Mar",Apr:"Apr",May:"May",Jun:"Jun",
+    Jul:"Jul",Aug:"Aug",Sep:"Sep",Oct:"Oct",Nov:"Nov",Dec:"Dec",
+  };
+  const parts = d.split("-");
+  if (parts.length === 3) {
+    // dd-MMM-yyyy
+    if (isNaN(Number(parts[1]))) return `${parts[0]} ${months[parts[1]] ?? parts[1]}`;
+    // yyyy-MM-dd
+    const date = new Date(d);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+    }
+  }
+  return d;
+}
+
+// ─── Skeleton Row ─────────────────────────────────────────────────────────────
+function SkeletonRow({ i }: { i: number }) {
   return (
-    <tr>
-      {Array.from({ length: 8 }).map((_, i) => (
-        <td key={i} style={{ padding: "14px 16px" }}>
-          <div
-            className="skeleton"
-            style={{ height: i === 6 ? 32 : 14, borderRadius: i === 6 ? 99 : 6, width: `${55 + (i % 4) * 12}%` }}
-          />
+    <tr style={{ borderBottom: "1px solid var(--border-light)" }}>
+      {[48, 90, 110, 200, 100, 90, 180, 90].map((w, j) => (
+        <td key={j} style={{ padding: "14px 16px" }}>
+          <div className="skeleton" style={{
+            height: j === 6 ? 28 : 13, width: `${w * (0.5 + (i * j % 5) * 0.1)}px`,
+            maxWidth: "100%", borderRadius: j === 6 ? 99 : 5,
+          }} />
         </td>
       ))}
     </tr>
   );
 }
 
+// ─── Sort Icon ────────────────────────────────────────────────────────────────
 function SortIcon({ dir }: { dir: SortDir }) {
-  if (dir === "asc") return <ChevronUp size={12} color="#6366f1" />;
-  if (dir === "desc") return <ChevronDown size={12} color="#6366f1" />;
-  return <ChevronsUpDown size={12} style={{ opacity: 0.35 }} />;
+  if (dir === "asc") return <ChevronUp size={12} strokeWidth={2.5} style={{ color: "#6366f1" }} />;
+  if (dir === "desc") return <ChevronDown size={12} strokeWidth={2.5} style={{ color: "#6366f1" }} />;
+  return <ChevronsUpDown size={11} strokeWidth={2} style={{ color: "var(--text-muted)", opacity: 0.5 }} />;
 }
 
-function formatDate(dateStr: string) {
-  return dateStr;
-}
-
-// ── Smart Column Filter Dropdown ─────────────────────────────────────────────
-
-interface SmartFilterProps {
+// ─── Dropdown ─────────────────────────────────────────────────────────────────
+function MultiSelectDropdown({
+  label, options, selected, onChange, icon: Icon,
+}: {
   label: string;
   options: string[];
   selected: string[];
-  onChange: (vals: string[]) => void;
-}
-
-function SmartFilter({ label, options, selected, onChange }: SmartFilterProps) {
+  onChange: (v: string[]) => void;
+  icon?: React.ElementType;
+}) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-        setQuery("");
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const h = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  const toggle = (val: string) => {
-    if (selected.includes(val)) onChange(selected.filter((s) => s !== val));
-    else onChange([...selected, val]);
+  const toggle = (v: string) => {
+    onChange(selected.includes(v) ? selected.filter(x => x !== v) : [...selected, v]);
   };
 
-  const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()));
-  const isActive = selected.length > 0;
+  const activeCount = selected.length;
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className={`filter-chip ${isActive || open ? "filter-chip-active" : ""}`}
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex", alignItems: "center", gap: 5,
+          padding: "6px 11px", borderRadius: 8,
+          border: activeCount > 0 ? "1.5px solid rgba(99,102,241,0.40)" : "1px solid var(--border)",
+          background: activeCount > 0 ? "rgba(99,102,241,0.08)" : "var(--bg-elevated)",
+          color: activeCount > 0 ? "#6366f1" : "var(--text-secondary)",
+          fontSize: 12, fontWeight: 600, cursor: "pointer",
+          fontFamily: "Inter, sans-serif",
+          transition: "all 0.15s ease",
+        }}
       >
+        {Icon && <Icon size={12} />}
         {label}
-        {isActive && (
-          <span className="filter-count">{selected.length}</span>
+        {activeCount > 0 && (
+          <span style={{
+            background: "#6366f1", color: "#fff", borderRadius: 99,
+            padding: "1px 6px", fontSize: 10, fontWeight: 700, lineHeight: "14px",
+          }}>{activeCount}</span>
         )}
-        <ChevronDown
-          size={12}
-          style={{
-            transition: "transform 0.2s ease",
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-          }}
-        />
+        <ChevronDown size={11} style={{ opacity: 0.6, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
       </button>
 
       {open && (
-        <div
-          className="dropdown-anim"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            left: 0,
-            zIndex: 200,
-            minWidth: 220,
-            maxHeight: 280,
-            background: "var(--bg-card)",
-            border: "1px solid var(--border)",
-            borderRadius: 14,
-            boxShadow: "0 12px 40px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.08)",
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {/* Search inside filter */}
-          {options.length > 6 && (
-            <div style={{ padding: "10px 12px 6px", borderBottom: "1px solid var(--border-light)" }}>
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={`Search ${label}...`}
-                autoFocus
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 50,
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: 12, padding: 6,
+          minWidth: 200, maxHeight: 260, overflowY: "auto",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.08)",
+          backdropFilter: "blur(12px)",
+        }}>
+          {options.length === 0 ? (
+            <div style={{ padding: "10px 12px", fontSize: 12, color: "var(--text-muted)" }}>No options</div>
+          ) : (
+            options.map(opt => (
+              <div
+                key={opt}
+                onClick={() => toggle(opt)}
                 style={{
-                  width: "100%",
-                  padding: "6px 10px",
-                  fontSize: 12,
-                  fontFamily: "Inter, sans-serif",
-                  border: "1.5px solid var(--border)",
-                  borderRadius: 8,
-                  background: "var(--bg-elevated)",
-                  color: "var(--text-primary)",
-                  outline: "none",
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "7px 10px", borderRadius: 8, cursor: "pointer",
+                  fontSize: 12, fontWeight: 500,
+                  background: selected.includes(opt) ? "rgba(99,102,241,0.08)" : "transparent",
+                  color: selected.includes(opt) ? "#6366f1" : "var(--text-primary)",
+                  transition: "background 0.12s ease",
                 }}
-              />
-            </div>
-          )}
-
-          {/* Options list */}
-          <div style={{ overflowY: "auto", flex: 1 }}>
-            {filtered.length === 0 && (
-              <div style={{ padding: "16px 14px", fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>
-                No options
-              </div>
-            )}
-            {filtered.map((opt) => {
-              const isSel = selected.includes(opt);
-              return (
-                <label
-                  key={opt}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "9px 14px",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: "var(--text-primary)",
-                    transition: "background 0.12s",
-                    background: isSel ? "var(--indigo-dim)" : "transparent",
-                  }}
-                  onMouseEnter={(e) => { if (!isSel) (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = isSel ? "var(--indigo-dim)" : "transparent"; }}
-                >
-                  {/* Checkbox */}
-                  <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: 5,
-                      border: `2px solid ${isSel ? "var(--indigo)" : "var(--border)"}`,
-                      background: isSel ? "var(--indigo)" : "transparent",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    {isSel && <Check size={10} color="#fff" strokeWidth={3} />}
-                  </div>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt}</span>
-                </label>
-              );
-            })}
-          </div>
-
-          {/* Footer */}
-          {options.length > 0 && (
-            <div
-              style={{
-                padding: "8px 12px",
-                borderTop: "1px solid var(--border-light)",
-                background: "var(--bg-elevated)",
-              }}
-            >
-              <button
-                onClick={() => { onChange([]); setQuery(""); }}
-                disabled={!isActive}
-                style={{
-                  width: "100%",
-                  padding: "6px",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  fontFamily: "Inter, sans-serif",
-                  color: isActive ? "var(--indigo-light)" : "var(--text-muted)",
-                  background: "transparent",
-                  border: "none",
-                  cursor: isActive ? "pointer" : "not-allowed",
-                  borderRadius: 6,
-                  transition: "background 0.12s",
-                }}
+                onMouseEnter={e => { if (!selected.includes(opt)) (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = selected.includes(opt) ? "rgba(99,102,241,0.08)" : "transparent"; }}
               >
-                {isActive ? `Clear ${selected.length} selected` : "No selection"}
-              </button>
-            </div>
+                <div style={{
+                  width: 16, height: 16, borderRadius: 5,
+                  border: selected.includes(opt) ? "none" : "1.5px solid var(--border)",
+                  background: selected.includes(opt) ? "#6366f1" : "transparent",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0, transition: "all 0.12s ease",
+                }}>
+                  {selected.includes(opt) && <Check size={10} color="#fff" strokeWidth={3} />}
+                </div>
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt}</span>
+              </div>
+            ))
           )}
         </div>
       )}
@@ -262,758 +204,588 @@ function SmartFilter({ label, options, selected, onChange }: SmartFilterProps) {
   );
 }
 
-// ── Main Table Component ─────────────────────────────────────────────────────
-
+// ─── Main Component ────────────────────────────────────────────────────────────
 export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoading }: ProductionTableProps) {
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<SortDir>("none");
+  const [sortKey, setSortKey] = useState<SortKey>("Date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [activePreset, setActivePreset] = useState<DatePreset | "custom" | "">("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activePreset, setActivePreset] = useState<DatePreset | "custom" | null>(null);
+  const [showCustomDate, setShowCustomDate] = useState(false);
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
-  // Extract unique values for filters from ALL rows
-  const uniqueVals = useMemo(() => {
-    const poSet = new Set<string>();
-    const designSet = new Set<string>();
-    const colorSet = new Set<string>();
-    const karigarSet = new Set<string>();
+  // Unique filter options
+  const poOptions = useMemo(() => [...new Set(allRows.map(r => r["Buyer PO Number"]).filter(Boolean))].sort(), [allRows]);
+  const designOptions = useMemo(() => [...new Set(allRows.map(r => r["Design Name"]).filter(Boolean))].sort(), [allRows]);
+  const colorOptions = useMemo(() => [...new Set(allRows.map(r => r["Yarn Color"]).filter(Boolean).filter(c => c !== "-"))].sort(), [allRows]);
+  const karigarOptions = useMemo(() => [...new Set(allRows.map(r => r.karigarInfo.name).filter(Boolean))].sort(), [allRows]);
 
-    for (const row of allRows) {
-      if (row["Buyer PO Number"]) poSet.add(row["Buyer PO Number"].trim());
-      if (row["Design Name"]) designSet.add(row["Design Name"].trim());
-      if (row["Yarn Color"]) colorSet.add(row["Yarn Color"].trim());
-      if (row.karigarInfo?.name) karigarSet.add(row.karigarInfo.name);
-    }
+  const isFiltered =
+    !!(filters.dateFrom || filters.poNumbers.length || filters.designNames.length ||
+      filters.yarnColors.length || filters.karigarNames.length) || !!searchQuery;
 
-    return {
-      poNumbers: [...poSet].sort(),
-      designNames: [...designSet].sort(),
-      yarnColors: [...colorSet].sort(),
-      karigarNames: [...karigarSet].sort(),
-    };
-  }, [allRows]);
-
-  // Search filter
+  // Search
   const searchedRows = useMemo(() => {
-    if (!search.trim()) return rows;
-    const q = search.toLowerCase();
-    return rows.filter(
-      (r) =>
-        r["Buyer PO Number"]?.toLowerCase().includes(q) ||
-        r["Natural Product Code"]?.toLowerCase().includes(q) ||
-        r["Design Name"]?.toLowerCase().includes(q) ||
-        r.karigarInfo.name.toLowerCase().includes(q)
+    if (!searchQuery.trim()) return rows;
+    const q = searchQuery.toLowerCase();
+    return rows.filter(r =>
+      r["Buyer PO Number"]?.toLowerCase().includes(q) ||
+      r["Design Name"]?.toLowerCase().includes(q) ||
+      r.karigarInfo.name?.toLowerCase().includes(q) ||
+      r["Yarn Color"]?.toLowerCase().includes(q) ||
+      r["Size"]?.toLowerCase().includes(q)
     );
-  }, [rows, search]);
+  }, [rows, searchQuery]);
 
   // Sort
   const sortedRows = useMemo(() => {
-    if (!sortKey || sortDir === "none") return searchedRows;
+    if (sortDir === "none") return searchedRows;
     return [...searchedRows].sort((a, b) => {
-      let aVal: string | number = "";
-      let bVal: string | number = "";
-
-      if (sortKey === "poProgress") {
-        aVal = a.poProgress;
-        bVal = b.poProgress;
-      } else if (sortKey === "dailyPiecesMade") {
-        aVal = a.dailyPiecesMade;
-        bVal = b.dailyPiecesMade;
-      } else if (sortKey === "Total Production") {
-        aVal = a.totalProductionNum;
-        bVal = b.totalProductionNum;
-      } else {
-        aVal = String(a[sortKey as keyof ProcessedRow] ?? "").toLowerCase();
-        bVal = String(b[sortKey as keyof ProcessedRow] ?? "").toLowerCase();
+      let av: unknown = a[sortKey as keyof ProcessedRow];
+      let bv: unknown = b[sortKey as keyof ProcessedRow];
+      if (sortKey === "dailyPiecesMade" || sortKey === "totalProductionNum" || sortKey === "poProgress") {
+        av = Number(av) || 0; bv = Number(bv) || 0;
+        return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
       }
-
-      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
-      return 0;
+      av = String(av ?? ""); bv = String(bv ?? "");
+      return sortDir === "asc"
+        ? (av as string).localeCompare(bv as string)
+        : (bv as string).localeCompare(av as string);
     });
   }, [searchedRows, sortKey, sortDir]);
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
-  const paginatedRows = sortedRows.slice((page - 1) * pageSize, page * pageSize);
+  const safePage = Math.min(page, totalPages);
+  const paginatedRows = sortedRows.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const grandTotal = useMemo(() => searchedRows.reduce((s, r) => s + r.dailyPiecesMade, 0), [searchedRows]);
 
-  useEffect(() => {
-    if (page > totalPages) setPage(1);
-  }, [totalPages, page]);
-
-  const handleSort = (key: string) => {
-    if (sortKey === key) {
-      setSortDir(sortDir === "asc" ? "desc" : sortDir === "desc" ? "none" : "asc");
-      if (sortDir === "desc") setSortKey(null);
-    } else {
-      setSortKey(key as SortKey);
-      setSortDir("asc");
-    }
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : d === "desc" ? "none" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
     setPage(1);
   };
 
   const applyPreset = (preset: DatePreset | "custom") => {
+    setPage(1);
+    if (preset === "custom") {
+      setActivePreset("custom");
+      setShowCustomDate(true);
+      return;
+    }
+    setShowCustomDate(false);
+    const { from, to } = getDateRangeForPreset(preset);
     setActivePreset(preset);
-    if (preset !== "custom") {
-      const { from, to } = getDateRangeForPreset(preset);
-      onFiltersChange({ ...filters, dateFrom: from, dateTo: to });
-    }
+    onFiltersChange({ ...filters, dateFrom: from, dateTo: to });
   };
 
-  const clearFilters = () => {
-    setActivePreset("");
-    setSearch("");
-    onFiltersChange({
-      dateFrom: "",
-      dateTo: "",
-      poNumbers: [],
-      designNames: [],
-      yarnColors: [],
-      karigarNames: [],
-    });
+  const clearPreset = () => {
+    setActivePreset(null);
+    setShowCustomDate(false);
+    onFiltersChange({ ...filters, dateFrom: "", dateTo: "" });
   };
 
-  const activeFiltersCount = [
-    filters.poNumbers.length,
-    filters.designNames.length,
-    filters.yarnColors.length,
-    filters.karigarNames.length,
-    filters.dateFrom ? 1 : 0,
-    search.trim() ? 1 : 0,
-  ].reduce((a, b) => a + b, 0);
+  const clearAll = () => {
+    setActivePreset(null);
+    setShowCustomDate(false);
+    setSearchQuery("");
+    onFiltersChange({ dateFrom: "", dateTo: "", poNumbers: [], designNames: [], yarnColors: [], karigarNames: [] });
+    setPage(1);
+  };
 
-  const grandTotal = useMemo(
-    () => searchedRows.reduce((sum, row) => sum + row.dailyPiecesMade, 0),
-    [searchedRows]
-  );
-
-  // Pagination page numbers
-  const pageNumbers = useMemo(() => {
-    const delta = 2;
-    const pages: (number | "…")[] = [];
-    for (let i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || (i >= page - delta && i <= page + delta)) {
-        pages.push(i);
-      } else if (pages[pages.length - 1] !== "…") {
-        pages.push("…");
-      }
-    }
-    return pages;
-  }, [page, totalPages]);
-
-  const thStyle: React.CSSProperties = {
-    padding: "13px 16px",
-    textAlign: "left",
-    fontSize: 10.5,
+  // Styles
+  const thBase: React.CSSProperties = {
+    padding: "11px 14px",
+    fontSize: 11,
     fontWeight: 700,
     textTransform: "uppercase",
-    letterSpacing: "0.08em",
+    letterSpacing: "0.07em",
     color: "var(--text-muted)",
     background: "var(--bg-elevated)",
     borderBottom: "1px solid var(--border)",
     whiteSpace: "nowrap",
     userSelect: "none",
   };
+  const thSortable: React.CSSProperties = { ...thBase, cursor: "pointer" };
+  const thRight: React.CSSProperties = { ...thBase, textAlign: "right" };
+  const thSortRight: React.CSSProperties = { ...thSortable, textAlign: "right" };
 
-  const thRight: React.CSSProperties = { ...thStyle, textAlign: "right" };
+  const tdBase: React.CSSProperties = {
+    padding: "12px 14px",
+    borderBottom: "1px solid var(--border-light)",
+    fontSize: 13,
+    color: "var(--text-primary)",
+    verticalAlign: "middle",
+  };
+
+  const pageNums = useMemo(() => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (safePage > 3) pages.push("...");
+      for (let i = Math.max(2, safePage - 1); i <= Math.min(totalPages - 1, safePage + 1); i++) pages.push(i);
+      if (safePage < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  }, [totalPages, safePage]);
 
   return (
-    <div
-      style={{
+    <div style={{
+      background: "var(--bg-card)",
+      borderRadius: 18,
+      border: "1px solid var(--border)",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)",
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
+    }}>
+
+      {/* ── Toolbar ── */}
+      <div style={{
+        padding: "14px 18px",
+        borderBottom: "1px solid var(--border)",
         background: "var(--bg-card)",
-        borderRadius: 16,
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-md)",
-        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-      }}
-    >
-      {/* ── Row 1: Search + Export ── */}
-      <div
-        style={{
-          padding: "16px 18px",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          borderBottom: "1px solid var(--border-light)",
-        }}
-      >
-        {/* Search */}
-        <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
-          <Search
-            size={15}
-            style={{
-              position: "absolute",
-              left: 12,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "var(--text-muted)",
-              pointerEvents: "none",
-            }}
-          />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search PO, Design, Karigar..."
-            className="table-search-input"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
+        gap: 10,
+      }}>
+        {/* Row 1: Search + Export */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Search */}
+          <div style={{ position: "relative", flex: 1, maxWidth: 340 }}>
+            <Search
+              size={14}
+              style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }}
+            />
+            <input
+              id="table-search"
+              type="text"
+              placeholder="Search PO, Design, Karigar, Color…"
+              value={searchQuery}
+              onChange={e => { setSearchQuery(e.target.value); setPage(1); }}
               style={{
-                position: "absolute",
-                right: 10,
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--text-muted)",
-                display: "flex",
-                alignItems: "center",
+                width: "100%", paddingLeft: 34, paddingRight: searchQuery ? 30 : 12,
+                paddingTop: 8, paddingBottom: 8,
+                border: "1px solid var(--border)",
+                borderRadius: 10,
+                background: "var(--bg-elevated)",
+                color: "var(--text-primary)",
+                fontSize: 13, fontFamily: "Inter, sans-serif",
+                outline: "none",
+                transition: "border-color 0.15s, box-shadow 0.15s",
               }}
-            >
-              <X size={13} />
-            </button>
-          )}
-        </div>
+              onFocus={e => {
+                e.target.style.borderColor = "rgba(99,102,241,0.5)";
+                e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.10)";
+              }}
+              onBlur={e => {
+                e.target.style.borderColor = "var(--border)";
+                e.target.style.boxShadow = "none";
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => { setSearchQuery(""); setPage(1); }}
+                style={{
+                  position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                  background: "none", border: "none", cursor: "pointer", padding: 2,
+                  color: "var(--text-muted)", display: "flex",
+                }}
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
 
-        {/* Result count badge */}
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "var(--text-muted)",
-            whiteSpace: "nowrap",
-            padding: "5px 12px",
+          {/* Record count badge */}
+          <div style={{
+            padding: "5px 12px", borderRadius: 8,
             background: "var(--bg-elevated)",
-            borderRadius: 99,
             border: "1px solid var(--border)",
-          }}
-        >
-          {sortedRows.length.toLocaleString()} records
-        </div>
+            fontSize: 12, fontWeight: 700,
+            color: "var(--text-secondary)",
+            whiteSpace: "nowrap",
+          }}>
+            {sortedRows.length.toLocaleString()} records
+          </div>
 
-        <div style={{ flex: 1 }} />
+          {/* Spacer */}
+          <div style={{ flex: 1 }} />
 
-        {/* Clear all */}
-        {activeFiltersCount > 0 && (
-          <button
-            onClick={clearFilters}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "7px 12px",
-              fontSize: 12,
-              fontWeight: 600,
-              fontFamily: "Inter, sans-serif",
-              color: "var(--text-secondary)",
-              background: "transparent",
-              border: "1.5px solid var(--border)",
-              borderRadius: 99,
-              cursor: "pointer",
-              transition: "all 0.15s",
-              whiteSpace: "nowrap",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = "#e11d48";
-              (e.currentTarget as HTMLElement).style.color = "#e11d48";
-              (e.currentTarget as HTMLElement).style.background = "rgba(225,29,72,0.06)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-              (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
-              (e.currentTarget as HTMLElement).style.background = "transparent";
-            }}
-          >
-            <X size={12} />
-            Clear {activeFiltersCount}
-          </button>
-        )}
-
-        {/* Export */}
-        <button
-          onClick={() => exportToCSV(sortedRows)}
-          disabled={sortedRows.length === 0}
-          className="export-btn"
-        >
-          <Download size={14} />
-          Export
-        </button>
-      </div>
-
-      {/* ── Row 2: Date Presets + Column Filters ── */}
-      <div
-        style={{
-          padding: "10px 18px",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          flexWrap: "wrap",
-          borderBottom: "1px solid var(--border-light)",
-          background: "var(--bg-elevated)",
-        }}
-      >
-        {/* Date preset pills */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <CalendarRange size={14} style={{ color: "var(--text-muted)", marginRight: 4, flexShrink: 0 }} />
-          {DATE_PRESETS.map((p) => (
+          {/* Clear all */}
+          {isFiltered && (
             <button
-              key={p.value}
-              onClick={() => applyPreset(p.value)}
-              className={`date-pill ${activePreset === p.value ? "date-pill-active" : "date-pill-inactive"}`}
-            >
-              {p.label}
-            </button>
-          ))}
-          {activePreset && (
-            <button
-              onClick={() => { setActivePreset(""); onFiltersChange({ ...filters, dateFrom: "", dateTo: "" }); }}
+              id="table-clear-filters"
+              onClick={clearAll}
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 22,
-                height: 22,
-                borderRadius: 99,
-                border: "none",
-                background: "var(--border)",
-                color: "var(--text-muted)",
-                cursor: "pointer",
-                flexShrink: 0,
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "6px 11px", borderRadius: 8,
+                border: "1px solid rgba(225,29,72,0.25)",
+                background: "rgba(225,29,72,0.06)",
+                color: "#e11d48", fontSize: 12, fontWeight: 600,
+                cursor: "pointer", fontFamily: "Inter, sans-serif",
+                transition: "all 0.15s",
               }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(225,29,72,0.10)"}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(225,29,72,0.06)"}
             >
-              <X size={11} />
+              <X size={12} /> Clear All
             </button>
           )}
+
+          {/* Export */}
+          <button
+            id="table-export"
+            onClick={() => exportToCSV(sortedRows)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "7px 14px", borderRadius: 9,
+              background: "linear-gradient(135deg,#3730a3,#6366f1)",
+              color: "#fff", border: "none",
+              fontSize: 12, fontWeight: 700,
+              cursor: "pointer", fontFamily: "Inter, sans-serif",
+              boxShadow: "0 2px 10px rgba(99,102,241,0.30)",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 16px rgba(99,102,241,0.45)"}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 10px rgba(99,102,241,0.30)"}
+          >
+            <Download size={13} /> Export CSV
+          </button>
         </div>
 
-        {/* Vertical divider */}
-        <div style={{ width: 1, height: 22, background: "var(--border)", flexShrink: 0 }} />
+        {/* Row 2: Date presets + Column filters */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {/* Date preset pills */}
+          <div style={{
+            display: "flex", alignItems: "center",
+            background: "var(--bg-elevated)",
+            borderRadius: 10, padding: 3,
+            border: "1px solid var(--border)",
+            gap: 2,
+          }}>
+            {DATE_PRESETS.map(p => (
+              <button
+                key={p.value}
+                id={`preset-${p.value}`}
+                onClick={() => activePreset === p.value ? clearPreset() : applyPreset(p.value)}
+                style={{
+                  padding: "5px 11px", borderRadius: 7,
+                  border: "none", fontSize: 12, fontWeight: 700,
+                  cursor: "pointer", fontFamily: "Inter, sans-serif",
+                  letterSpacing: "-0.01em",
+                  transition: "all 0.15s cubic-bezier(0.34,1.56,0.64,1)",
+                  background: activePreset === p.value ? "#6366f1" : "transparent",
+                  color: activePreset === p.value ? "#fff" : "var(--text-secondary)",
+                  boxShadow: activePreset === p.value ? "0 2px 8px rgba(99,102,241,0.35)" : "none",
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Column filters */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-          <SlidersHorizontal size={13} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-          <SmartFilter
-            label="PO Number"
-            options={uniqueVals.poNumbers}
-            selected={filters.poNumbers}
-            onChange={(v) => onFiltersChange({ ...filters, poNumbers: v })}
-          />
-          <SmartFilter
-            label="Design"
-            options={uniqueVals.designNames}
-            selected={filters.designNames}
-            onChange={(v) => onFiltersChange({ ...filters, designNames: v })}
-          />
-          <SmartFilter
-            label="Color"
-            options={uniqueVals.yarnColors}
-            selected={filters.yarnColors}
-            onChange={(v) => onFiltersChange({ ...filters, yarnColors: v })}
-          />
-          <SmartFilter
-            label="Karigar"
-            options={uniqueVals.karigarNames}
-            selected={filters.karigarNames}
-            onChange={(v) => onFiltersChange({ ...filters, karigarNames: v })}
-          />
+          {/* Custom date range */}
+          {showCustomDate && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "4px 10px", borderRadius: 8,
+                border: "1px solid var(--border)", background: "var(--bg-elevated)",
+              }}>
+                <CalendarRange size={12} color="var(--text-muted)" />
+                <input
+                  type="date" value={filters.dateFrom}
+                  onChange={e => { onFiltersChange({ ...filters, dateFrom: e.target.value }); setPage(1); }}
+                  style={{ border: "none", background: "transparent", fontSize: 12, color: "var(--text-primary)", outline: "none", fontFamily: "Inter, sans-serif" }}
+                />
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>→</span>
+                <input
+                  type="date" value={filters.dateTo}
+                  onChange={e => { onFiltersChange({ ...filters, dateTo: e.target.value }); setPage(1); }}
+                  style={{ border: "none", background: "transparent", fontSize: 12, color: "var(--text-primary)", outline: "none", fontFamily: "Inter, sans-serif" }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Divider */}
+          <div style={{ width: 1, height: 22, background: "var(--border)", flexShrink: 0 }} />
+
+          {/* Column filters */}
+          <MultiSelectDropdown label="PO Number" options={poOptions} selected={filters.poNumbers}
+            onChange={v => { onFiltersChange({ ...filters, poNumbers: v }); setPage(1); }} />
+          <MultiSelectDropdown label="Design" options={designOptions} selected={filters.designNames}
+            onChange={v => { onFiltersChange({ ...filters, designNames: v }); setPage(1); }} />
+          <MultiSelectDropdown label="Color" options={colorOptions} selected={filters.yarnColors}
+            onChange={v => { onFiltersChange({ ...filters, yarnColors: v }); setPage(1); }} />
+          <MultiSelectDropdown label="Karigar" options={karigarOptions} selected={filters.karigarNames}
+            onChange={v => { onFiltersChange({ ...filters, karigarNames: v }); setPage(1); }} />
         </div>
       </div>
 
-      {/* ── Custom Date Range Picker ── */}
-      {activePreset === "custom" && (
-        <div
-          className="dropdown-anim"
-          style={{
-            padding: "10px 18px",
-            borderBottom: "1px solid var(--border-light)",
-            background: "var(--bg-elevated)",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <CalendarRange size={14} style={{ color: "var(--indigo-light)", flexShrink: 0 }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>Custom Range:</span>
-          <input
-            type="date"
-            value={filters.dateFrom}
-            onChange={(e) => onFiltersChange({ ...filters, dateFrom: e.target.value })}
-            style={{
-              padding: "6px 12px",
-              fontSize: 12,
-              fontFamily: "Inter, sans-serif",
-              border: "1.5px solid var(--border)",
-              borderRadius: 8,
-              background: "var(--bg-card)",
-              color: "var(--text-primary)",
-              outline: "none",
-              cursor: "pointer",
-            }}
-          />
-          <span style={{ color: "var(--text-muted)", fontSize: 13 }}>→</span>
-          <input
-            type="date"
-            value={filters.dateTo}
-            onChange={(e) => onFiltersChange({ ...filters, dateTo: e.target.value })}
-            style={{
-              padding: "6px 12px",
-              fontSize: 12,
-              fontFamily: "Inter, sans-serif",
-              border: "1.5px solid var(--border)",
-              borderRadius: 8,
-              background: "var(--bg-card)",
-              color: "var(--text-primary)",
-              outline: "none",
-              cursor: "pointer",
-            }}
-          />
-        </div>
-      )}
+      {/* ── Table ── */}
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
 
-      {/* ── Data Table ── */}
-      <div style={{ overflowX: "auto", flex: 1 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
-          <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
+          {/* Header */}
+          <thead>
             <tr>
-              <th style={{ ...thStyle, width: 52, paddingLeft: 18 }}>#</th>
-
-              <th style={{ ...thStyle, width: 120 }}>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
-                  onClick={() => handleSort("Date")}
-                >
+              <th style={{ ...thBase, width: 44, paddingLeft: 18, textAlign: "center" }}>#</th>
+              <th style={thSortable} onClick={() => handleSort("Date")}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Date <SortIcon dir={sortKey === "Date" ? sortDir : "none"} />
                 </div>
               </th>
-
-              <th style={{ ...thStyle, width: 110 }}>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
-                  onClick={() => handleSort("Buyer PO Number")}
-                >
-                  PO # <SortIcon dir={sortKey === "Buyer PO Number" ? sortDir : "none"} />
+              <th style={thSortable} onClick={() => handleSort("Buyer PO Number" as SortKey)}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  PO Number <SortIcon dir={sortKey === "Buyer PO Number" ? sortDir : "none"} />
                 </div>
               </th>
-
-              <th style={{ ...thStyle, minWidth: 200 }}>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
-                  onClick={() => handleSort("Design Name")}
-                >
+              <th style={{ ...thSortable, minWidth: 180 }} onClick={() => handleSort("Design Name" as SortKey)}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Design <SortIcon dir={sortKey === "Design Name" ? sortDir : "none"} />
                 </div>
               </th>
-
-              <th style={{ ...thStyle, width: 120 }}>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
-                  onClick={() => handleSort("Yarn Color")}
-                >
-                  Color <SortIcon dir={sortKey === "Yarn Color" ? sortDir : "none"} />
-                </div>
-              </th>
-
-              <th style={{ ...thStyle, width: 100 }}>Size</th>
-
-              <th style={{ ...thStyle, minWidth: 180 }}>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
-                  onClick={() => handleSort("Name of Karigar 1")}
-                >
+              <th style={{ ...thBase, width: 100 }}>Color</th>
+              <th style={{ ...thBase, width: 110 }}>Size</th>
+              <th style={{ ...thSortable, minWidth: 160 }} onClick={() => handleSort("Name of Karigar 1" as SortKey)}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Karigar <SortIcon dir={sortKey === "Name of Karigar 1" ? sortDir : "none"} />
                 </div>
               </th>
-
-              <th style={{ ...thRight, width: 140, paddingRight: 20 }}>
-                Karigar Acct (Pcs)
+              <th style={thSortRight} onClick={() => handleSort("dailyPiecesMade")}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+                  <SortIcon dir={sortKey === "dailyPiecesMade" ? sortDir : "none"} />
+                  Karigar Acct (Pcs)
+                </div>
               </th>
             </tr>
           </thead>
 
+          {/* Body */}
           <tbody>
-            {isLoading && Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
+            {isLoading && Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} i={i} />)}
 
             {!isLoading && paginatedRows.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ padding: "64px 24px", textAlign: "center" }}>
+                <td colSpan={8} style={{ padding: "72px 24px", textAlign: "center" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
-                    <div
-                      style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: 20,
-                        background: "var(--bg-elevated)",
-                        border: "1px solid var(--border)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <PackageOpen size={28} style={{ color: "var(--text-muted)" }} />
+                    <div style={{
+                      width: 64, height: 64, borderRadius: 20,
+                      background: "var(--bg-elevated)",
+                      border: "1px solid var(--border)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <PackageOpen size={28} color="var(--text-muted)" strokeWidth={1.5} />
                     </div>
                     <div>
-                      <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", marginBottom: 5 }}>
                         No records found
-                      </p>
-                      <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
                         Try adjusting your filters or search query
-                      </p>
+                      </div>
                     </div>
-                    {activeFiltersCount > 0 && (
-                      <button
-                        onClick={clearFilters}
-                        style={{
-                          marginTop: 4,
-                          fontSize: 13,
-                          fontWeight: 600,
-                          fontFamily: "Inter, sans-serif",
-                          color: "var(--indigo-light)",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          textDecoration: "underline",
-                        }}
-                      >
-                        Clear all filters
-                      </button>
+                    {isFiltered && (
+                      <button onClick={clearAll} style={{
+                        padding: "7px 16px", borderRadius: 8,
+                        background: "rgba(99,102,241,0.10)", color: "#6366f1",
+                        border: "1px solid rgba(99,102,241,0.25)", fontSize: 12, fontWeight: 600,
+                        cursor: "pointer", fontFamily: "Inter, sans-serif",
+                      }}>Clear all filters</button>
                     )}
                   </div>
                 </td>
               </tr>
             )}
 
-            {!isLoading &&
-              paginatedRows.map((row, idx) => {
-                const avatarColor = getAvatarColor(row.karigarInfo.name);
-                const isEven = idx % 2 === 0;
-                return (
-                  <tr
-                    key={`${row["Buyer PO Number"]}-${row.karigarInfo.fullRaw}-${row.Date}-${idx}`}
-                    style={{
-                      borderBottom: "1px solid var(--border-light)",
-                      background: isEven ? "var(--bg-card)" : "var(--bg-elevated)",
-                      transition: "background 0.12s",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = "rgba(99,102,241,0.04)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = isEven ? "var(--bg-card)" : "var(--bg-elevated)";
-                    }}
-                  >
-                    {/* Row number */}
-                    <td style={{ padding: "12px 16px 12px 18px" }}>
-                      <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
-                        {(page - 1) * pageSize + idx + 1}
-                      </span>
-                    </td>
+            {!isLoading && paginatedRows.map((row, idx) => {
+              const globalIdx = (safePage - 1) * pageSize + idx + 1;
+              const avColor = getAvatarColor(row.karigarInfo.name);
+              const poColor = getPoColor(row["Buyer PO Number"] ?? "");
+              const pieces = row.dailyPiecesMade;
+              const isHovered = hoveredRow === idx;
 
-                    {/* Date */}
-                    <td style={{ padding: "12px 16px" }}>
-                      <span
-                        style={{
-                          fontSize: 12.5,
-                          fontWeight: 600,
-                          color: "var(--text-secondary)",
-                          fontVariantNumeric: "tabular-nums",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {formatDate(row.Date)}
-                      </span>
-                    </td>
+              return (
+                <tr
+                  key={`${row.Date}-${row["Name of Karigar 1"]}-${idx}`}
+                  onMouseEnter={() => setHoveredRow(idx)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                  style={{
+                    borderBottom: "1px solid var(--border-light)",
+                    background: isHovered ? "var(--bg-elevated)" : "transparent",
+                    transition: "background 0.12s ease",
+                    borderLeft: isHovered ? "3px solid #6366f1" : "3px solid transparent",
+                  }}
+                >
+                  {/* # */}
+                  <td style={{ ...tdBase, paddingLeft: 14, textAlign: "center", width: 44 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
+                      {globalIdx}
+                    </span>
+                  </td>
 
-                    {/* PO Number */}
-                    <td style={{ padding: "12px 16px" }}>
-                      <span
-                        style={{
-                          fontSize: 12.5,
-                          fontWeight: 700,
-                          color: "var(--indigo-light)",
-                          background: "var(--indigo-dim)",
-                          padding: "3px 8px",
-                          borderRadius: 6,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                  {/* Date */}
+                  <td style={{ ...tdBase, width: 90 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
+                      {formatDate(row.Date)}
+                    </div>
+                  </td>
+
+                  {/* PO Number */}
+                  <td style={{ ...tdBase, width: 130 }}>
+                    {row["Buyer PO Number"] ? (
+                      <span style={{
+                        display: "inline-block",
+                        padding: "3px 9px", borderRadius: 7,
+                        background: poColor.bg, color: poColor.text,
+                        border: `1px solid ${poColor.border}`,
+                        fontSize: 11.5, fontWeight: 700, letterSpacing: "-0.01em",
+                        whiteSpace: "nowrap",
+                      }}>
                         {row["Buyer PO Number"]}
                       </span>
-                    </td>
+                    ) : <span style={{ color: "var(--text-muted)", fontSize: 12 }}>—</span>}
+                  </td>
 
-                    {/* Design */}
-                    <td style={{ padding: "12px 16px", maxWidth: 200 }}>
-                      <span
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "var(--text-primary)",
-                          display: "block",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {row["Design Name"]}
+                  {/* Design */}
+                  <td style={{ ...tdBase, minWidth: 180 }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: 600,
+                      color: "var(--text-primary)",
+                      maxWidth: 240,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }} title={row["Design Name"] ?? ""}>
+                      {row["Design Name"] || "—"}
+                    </div>
+                  </td>
+
+                  {/* Color */}
+                  <td style={{ ...tdBase, width: 100 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {row["Yarn Color"] && row["Yarn Color"] !== "-" && row["Yarn Color"] !== "" ? (
+                        <>
+                          <div style={{
+                            width: 10, height: 10, borderRadius: "50%",
+                            background: `hsl(${hashStr(row["Yarn Color"]) % 360},65%,55%)`,
+                            border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0,
+                          }} />
+                          <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 80 }}>
+                            {row["Yarn Color"]}
+                          </span>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>—</span>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* Size */}
+                  <td style={{ ...tdBase, width: 110 }}>
+                    {row["Size"] ? (
+                      <span style={{
+                        fontSize: 11.5, fontWeight: 600, color: "var(--text-secondary)",
+                        background: "var(--bg-elevated)", border: "1px solid var(--border)",
+                        borderRadius: 6, padding: "2px 7px",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {row["Size"]}
                       </span>
-                    </td>
+                    ) : <span style={{ color: "var(--text-muted)", fontSize: 12 }}>—</span>}
+                  </td>
 
-                    {/* Color */}
-                    <td style={{ padding: "12px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <div
-                          style={{
-                            width: 12,
-                            height: 12,
-                            borderRadius: "50%",
-                            border: "2px solid var(--border)",
-                            flexShrink: 0,
-                            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.08)",
-                            background:
-                              row["Yarn Color"]?.toLowerCase() === "white"
-                                ? "#f8fafc"
-                                : row["Yarn Color"]?.toLowerCase(),
-                          }}
-                        />
-                        <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{row["Yarn Color"]}</span>
+                  {/* Karigar */}
+                  <td style={{ ...tdBase, minWidth: 160 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: 10,
+                        background: avColor.bg, color: avColor.text,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 11, fontWeight: 800, flexShrink: 0,
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.10)",
+                        letterSpacing: "-0.02em",
+                      }}>
+                        {initials(row.karigarInfo.name || "?")}
                       </div>
-                    </td>
-
-                    {/* Size */}
-                    <td style={{ padding: "12px 16px" }}>
-                      <span
-                        style={{
-                          fontSize: 11.5,
-                          fontWeight: 600,
-                          color: "var(--text-secondary)",
-                          background: "var(--bg-elevated)",
-                          border: "1px solid var(--border)",
-                          padding: "3px 8px",
-                          borderRadius: 6,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {row.Size}
-                      </span>
-                    </td>
-
-                    {/* Karigar */}
-                    <td style={{ padding: "12px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div
-                          style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 10,
-                            background: avatarColor.bg,
-                            color: avatarColor.text,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 11,
-                            fontWeight: 800,
-                            flexShrink: 0,
-                            letterSpacing: "0.02em",
-                          }}
-                        >
-                          {row.karigarInfo.name.substring(0, 2).toUpperCase()}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.2, whiteSpace: "nowrap" }}>
+                          {row.karigarInfo.name || "—"}
                         </div>
-                        <div>
-                          <p
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 600,
-                              color: "var(--text-primary)",
-                              lineHeight: 1.3,
-                            }}
-                          >
-                            {row.karigarInfo.name}
-                          </p>
-                          {row.karigarInfo.phone && (
-                            <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
-                              {row.karigarInfo.phone}
-                            </p>
-                          )}
-                        </div>
+                        {row.karigarInfo.phone && (
+                          <div style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 1, fontVariantNumeric: "tabular-nums" }}>
+                            {row.karigarInfo.phone}
+                          </div>
+                        )}
                       </div>
-                    </td>
+                    </div>
+                  </td>
 
-                    {/* Karigar Account (Pieces) — Column W in sheet */}
-                    <td style={{ padding: "12px 20px 12px 16px", textAlign: "right" }}>
-                      <div
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                          padding: "4px 12px",
-                          borderRadius: 99,
-                          fontSize: 13,
-                          fontWeight: 700,
+                  {/* Karigar Account Pieces */}
+                  <td style={{ ...tdBase, textAlign: "right", paddingRight: 20 }}>
+                    {pieces > 0 ? (
+                      <div style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        padding: "5px 13px", borderRadius: 99,
+                        background: "linear-gradient(135deg,rgba(5,150,105,0.12),rgba(5,150,105,0.06))",
+                        border: "1px solid rgba(5,150,105,0.22)",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+                      }}>
+                        <ChevronUp size={11} strokeWidth={3} color="#059669" />
+                        <span style={{
+                          fontSize: 14, fontWeight: 800,
+                          color: "#059669",
                           fontVariantNumeric: "tabular-nums",
-                          ...(row.dailyPiecesMade > 0
-                            ? {
-                                background: "rgba(5,150,105,0.10)",
-                                color: "#059669",
-                                border: "1px solid rgba(5,150,105,0.20)",
-                              }
-                            : {
-                                background: "var(--bg-elevated)",
-                                color: "var(--text-muted)",
-                                border: "1px solid var(--border)",
-                              }),
-                        }}
-                      >
-                        {row.dailyPiecesMade > 0 && <ChevronUp size={11} strokeWidth={3} />}
-                        {row.dailyPiecesMade > 0 ? row.dailyPiecesMade : "—"}
+                          letterSpacing: "-0.02em",
+                        }}>
+                          {pieces.toLocaleString()}
+                        </span>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                    ) : (
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500 }}>—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
 
           {/* Grand Total Footer */}
           {!isLoading && paginatedRows.length > 0 && (
             <tfoot>
-              <tr
-                style={{
-                  background: "var(--bg-elevated)",
-                  borderTop: "2px solid var(--border)",
-                  position: "sticky",
-                  bottom: 0,
-                }}
-              >
-                <td
-                  colSpan={7}
-                  style={{
-                    padding: "13px 16px",
-                    textAlign: "right",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  Grand Total (Karigar Account Pieces)
+              <tr style={{
+                background: "linear-gradient(90deg, var(--bg-elevated), var(--bg-card))",
+                borderTop: "2px solid var(--border)",
+              }}>
+                <td colSpan={7} style={{
+                  padding: "13px 18px",
+                  textAlign: "right",
+                  fontSize: 11, fontWeight: 700,
+                  textTransform: "uppercase", letterSpacing: "0.08em",
+                  color: "var(--text-muted)",
+                }}>
+                  Grand Total — {sortedRows.length.toLocaleString()} records
                 </td>
-                <td style={{ padding: "11px 20px 11px 16px", textAlign: "right" }}>
-                  <span
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 900,
-                      fontVariantNumeric: "tabular-nums",
-                      color: "var(--indigo-light)",
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
-                    {grandTotal.toLocaleString()}
-                  </span>
+                <td style={{ padding: "13px 20px 13px 14px", textAlign: "right" }}>
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "5px 14px", borderRadius: 99,
+                    background: "linear-gradient(135deg,#059669,#065f46)",
+                    boxShadow: "0 2px 10px rgba(5,150,105,0.35)",
+                  }}>
+                    <span style={{
+                      fontSize: 16, fontWeight: 900, color: "#fff",
+                      fontVariantNumeric: "tabular-nums", letterSpacing: "-0.03em",
+                    }}>
+                      {grandTotal.toLocaleString()}
+                    </span>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.75)", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                      pcs
+                    </span>
+                  </div>
                 </td>
               </tr>
             </tfoot>
@@ -1022,123 +794,105 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       </div>
 
       {/* ── Pagination ── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+      {!isLoading && sortedRows.length > 0 && (
+        <div style={{
           padding: "12px 18px",
           borderTop: "1px solid var(--border)",
+          display: "flex", alignItems: "center",
+          justifyContent: "space-between",
           background: "var(--bg-card)",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        {/* Left: count + page size */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{(page - 1) * pageSize + 1}</span>
-            {" – "}
-            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{Math.min(page * pageSize, sortedRows.length)}</span>
-            {" of "}
-            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{sortedRows.length}</span>
-          </span>
+          gap: 12, flexWrap: "wrap",
+        }}>
+          {/* Left: Page info */}
+          <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500, whiteSpace: "nowrap" }}>
+            Showing{" "}
+            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+              {((safePage - 1) * pageSize + 1).toLocaleString()}–{Math.min(safePage * pageSize, sortedRows.length).toLocaleString()}
+            </span>
+            {" "}of{" "}
+            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{sortedRows.length.toLocaleString()}</span>
+          </div>
 
-          <select
-            value={pageSize}
-            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              fontFamily: "Inter, sans-serif",
-              border: "1.5px solid var(--border)",
-              background: "var(--bg-card)",
-              color: "var(--text-primary)",
-              borderRadius: 8,
-              padding: "4px 8px",
-              outline: "none",
-              cursor: "pointer",
-            }}
-          >
-            {PAGE_SIZES.map((s) => (
-              <option key={s} value={s}>{s} / page</option>
+          {/* Center: Page numbers */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <button
+              id="table-prev"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              style={{
+                width: 32, height: 32, borderRadius: 8,
+                border: "1px solid var(--border)", background: "var(--bg-elevated)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: safePage === 1 ? "not-allowed" : "pointer",
+                opacity: safePage === 1 ? 0.4 : 1,
+                color: "var(--text-secondary)", transition: "all 0.12s",
+              }}
+            >
+              <ChevronLeft size={14} />
+            </button>
+
+            {pageNums.map((p, i) => (
+              p === "..." ? (
+                <span key={`dot-${i}`} style={{ padding: "0 4px", fontSize: 13, color: "var(--text-muted)" }}>…</span>
+              ) : (
+                <button
+                  key={p}
+                  id={`page-btn-${p}`}
+                  onClick={() => setPage(p as number)}
+                  style={{
+                    minWidth: 32, height: 32, paddingInline: 6, borderRadius: 8,
+                    border: safePage === p ? "none" : "1px solid var(--border)",
+                    background: safePage === p ? "#6366f1" : "var(--bg-elevated)",
+                    color: safePage === p ? "#fff" : "var(--text-secondary)",
+                    fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    boxShadow: safePage === p ? "0 2px 8px rgba(99,102,241,0.35)" : "none",
+                    fontFamily: "Inter, sans-serif",
+                    transition: "all 0.12s ease",
+                  }}
+                >
+                  {p}
+                </button>
+              )
             ))}
-          </select>
+
+            <button
+              id="table-next"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              style={{
+                width: 32, height: 32, borderRadius: 8,
+                border: "1px solid var(--border)", background: "var(--bg-elevated)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: safePage === totalPages ? "not-allowed" : "pointer",
+                opacity: safePage === totalPages ? 0.4 : 1,
+                color: "var(--text-secondary)", transition: "all 0.12s",
+              }}
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          {/* Right: Page size */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>Rows per page</span>
+            <select
+              id="table-page-size"
+              value={pageSize}
+              onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+              style={{
+                padding: "5px 10px", borderRadius: 8,
+                border: "1px solid var(--border)",
+                background: "var(--bg-elevated)",
+                color: "var(--text-primary)",
+                fontSize: 12, fontWeight: 600, cursor: "pointer",
+                fontFamily: "Inter, sans-serif", outline: "none",
+              }}
+            >
+              {PAGE_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
         </div>
-
-        {/* Right: page buttons */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <button
-            onClick={() => setPage(Math.max(1, page - 1))}
-            disabled={page === 1}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              border: "1.5px solid var(--border)",
-              background: "var(--bg-card)",
-              color: page === 1 ? "var(--text-muted)" : "var(--text-primary)",
-              cursor: page === 1 ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              opacity: page === 1 ? 0.4 : 1,
-              transition: "all 0.12s",
-            }}
-          >
-            <ChevronLeft size={14} />
-          </button>
-
-          {pageNumbers.map((p, i) =>
-            p === "…" ? (
-              <span key={`ellipsis-${i}`} style={{ padding: "0 4px", color: "var(--text-muted)", fontSize: 13 }}>
-                …
-              </span>
-            ) : (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  border: `1.5px solid ${p === page ? "var(--indigo)" : "var(--border)"}`,
-                  background: p === page ? "var(--indigo)" : "var(--bg-card)",
-                  color: p === page ? "#fff" : "var(--text-primary)",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                  boxShadow: p === page ? "0 2px 8px rgba(79,70,229,0.35)" : "none",
-                }}
-              >
-                {p}
-              </button>
-            )
-          )}
-
-          <button
-            onClick={() => setPage(Math.min(totalPages, page + 1))}
-            disabled={page === totalPages}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              border: "1.5px solid var(--border)",
-              background: "var(--bg-card)",
-              color: page === totalPages ? "var(--text-muted)" : "var(--text-primary)",
-              cursor: page === totalPages ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              opacity: page === totalPages ? 0.4 : 1,
-              transition: "all 0.12s",
-            }}
-          >
-            <ChevronRight size={14} />
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
