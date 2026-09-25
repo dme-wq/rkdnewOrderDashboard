@@ -81,7 +81,10 @@ function getSheetAsJSON(ss, sheetName) {
   var range = sheet.getDataRange();
   var values = range.getDisplayValues();
   var rawValues = range.getValues();
-  var headers = values[0].map(function(h) { return String(h).trim(); });
+  // Normalize headers: replace newlines (from wrapped header cells) with a single space
+  var headers = values[0].map(function(h) { 
+    return String(h).trim().replace(/\n/g, " ").replace(/\s+/g, " "); 
+  });
   var rows = [];
 
   for (var r = 1; r < values.length; r++) {

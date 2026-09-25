@@ -65,7 +65,17 @@ function safeParseDate(dateStr: string): Date | null {
 
 // ─── Step 1: Compute daily deltas ─────────────────────────────────────────────
 // The Karigar Account (Pieces) column contains the actual daily pieces made.
-// We map it directly rather than trying to compute a delta from Total Production.
+// Google Sheet wrapped headers may come as "Karigar Account\n(Pieces)" or
+// "Karigar Account (Pieces)" — we handle both.
+
+// Lookup a column value, trying multiple key variants (handles newline-wrapped headers)
+function getColValue(row: Record<string, string>, ...keys: string[]): string {
+  for (const key of keys) {
+    const val = (row as Record<string, string>)[key];
+    if (val !== undefined && val !== null) return val;
+  }
+  return "";
+}
 
 export function computeDailyDelta(
   rows: DataEntryRow[],
@@ -83,8 +93,15 @@ export function computeDailyDelta(
   const processed: ProcessedRow[] = [];
   for (const row of rows) {
     const currentTotal = safeParseNum(row["Total Production"]);
-    // Use the explicit Karigar Account column as requested for the daily pieces
-    const dailyPiecesMade = safeParseNum(row["Karigar Account (Pieces)"]);
+    // Use the explicit Karigar Account column as the daily pieces
+    // Try multiple key variants to handle wrapped header cells in Google Sheets
+    const karigarAcctRaw = getColValue(
+      row as unknown as Record<string, string>,
+      "Karigar Account (Pieces)",
+      "Karigar Account\n(Pieces)",
+      "Karigar Account(Pieces)"
+    );
+    const dailyPiecesMade = safeParseNum(karigarAcctRaw);
 
     const product = row["Natural Product Code"]?.trim() ?? "";
     const poTarget = poTargetMap.get(product) ?? 0;
