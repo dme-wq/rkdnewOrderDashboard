@@ -240,5 +240,6 @@ export function TableMiniStats({
           Table Summary
         </span>
       </div>
+    </div>
   );
 }
