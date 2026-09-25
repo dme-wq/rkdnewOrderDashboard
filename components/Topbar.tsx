@@ -195,8 +195,8 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
       className="topbar"
       style={{ height: 100, paddingLeft: 20, paddingRight: 20, alignItems: "center" }}
     >
-      {/* LEFT: Logo + Title */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+      {/* LEFT: Logo */}
+      <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
         <div style={{
           width: 42, height: 42, borderRadius: 12,
           background: "#fff", padding: 2,
@@ -210,19 +210,6 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
             alt="RKD Logo"
             style={{ objectFit: "contain", width: "100%", height: "100%" }}
           />
-        </div>
-        <div>
-          <h1 style={{
-            fontSize: 15, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2,
-            background: "linear-gradient(135deg, var(--text-primary) 0%, var(--indigo-light) 100%)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-            whiteSpace: "nowrap",
-          }}>
-            RKD New Order Dashboard
-          </h1>
-          <p style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 1, fontWeight: 500, whiteSpace: "nowrap" }}>
-            Live production tracker — Bathmat Tufting
-          </p>
         </div>
       </div>
 
