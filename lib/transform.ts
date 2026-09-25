@@ -92,6 +92,12 @@ export function computeDailyDelta(
 
   const processed: ProcessedRow[] = [];
   for (const row of rows) {
+    // Skip completely empty/dropdown-default rows from Google Sheets
+    const hasDate = row.Date && row.Date.trim() !== "";
+    const hasKarigar = row["Name of Karigar 1"] && row["Name of Karigar 1"].trim() !== "";
+    const hasPO = row["Buyer PO Number"] && row["Buyer PO Number"].trim() !== "";
+    if (!hasDate && !hasKarigar && !hasPO) continue;
+
     const currentTotal = safeParseNum(row["Total Production"]);
     // Use the explicit Karigar Account column as the daily pieces
     // Try multiple key variants to handle wrapped header cells in Google Sheets

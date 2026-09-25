@@ -88,8 +88,15 @@ function getSheetAsJSON(ss, sheetName) {
   var rows = [];
 
   for (var r = 1; r < values.length; r++) {
-    var isEmpty = values[r].every(function(cell) { return cell === "" || cell === null; });
-    if (isEmpty) continue;
+    // Skip rows that are truly empty (no date and no PO number = not a real entry)
+    var hasDate = values[r][0] !== "" && values[r][0] !== null;
+    var hasPO = false;
+    headers.forEach(function(h, c) {
+      if ((h === "Buyer PO Number" || h === "Date") && values[r][c] !== "" && values[r][c] !== null) {
+        hasPO = true;
+      }
+    });
+    if (!hasDate && !hasPO) continue;
     var obj = {};
     headers.forEach(function(header, c) {
       if (!header) return;

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-const APPS_SCRIPT_URL = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || "";
+// Fallback URL — updated to latest deployment
+const FALLBACK_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyxcAZoMwtGC_ZuAXv10sVM_4K6ZCposdnscifYgXHJnLpeQE1ZmdffQwesO28Ya4NQJQ/exec";
+
+const APPS_SCRIPT_URL = (process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || FALLBACK_APPS_SCRIPT_URL).trim();
 
 // No caching — always fetch fresh data from Google Apps Script
 export const dynamic = "force-dynamic";
@@ -9,7 +12,7 @@ export const revalidate = 0;
 export async function GET() {
   if (!APPS_SCRIPT_URL) {
     return NextResponse.json(
-      { success: false, error: "NEXT_PUBLIC_APPS_SCRIPT_URL is not configured." },
+      { success: false, error: "NEXT_PUBLIC_APPS_SCRIPT_URL is not configured and no fallback available." },
       { status: 500 }
     );
   }
