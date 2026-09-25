@@ -535,29 +535,29 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
           <thead>
             <tr>
               <th style={{ ...thBase, width: 44, paddingLeft: 18, textAlign: "center" }}>#</th>
-              <th style={thSortable} onClick={() => handleSort("Date")}>
+              <th style={{ ...thSortable, width: 100 }} onClick={() => handleSort("Date")}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Date <SortIcon dir={sortKey === "Date" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={thSortable} onClick={() => handleSort("Buyer PO Number" as SortKey)}>
+              <th style={{ ...thSortable, width: 130 }} onClick={() => handleSort("Buyer PO Number" as SortKey)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   PO Number <SortIcon dir={sortKey === "Buyer PO Number" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={{ ...thSortable, minWidth: 180 }} onClick={() => handleSort("Design Name" as SortKey)}>
+              <th style={{ ...thSortable, width: "auto", minWidth: 180 }} onClick={() => handleSort("Design Name" as SortKey)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Design <SortIcon dir={sortKey === "Design Name" ? sortDir : "none"} />
                 </div>
               </th>
               <th style={{ ...thBase, width: 100 }}>Color</th>
               <th style={{ ...thBase, width: 110 }}>Size</th>
-              <th style={{ ...thSortable, minWidth: 160 }} onClick={() => handleSort("Name of Karigar 1" as SortKey)}>
+              <th style={{ ...thSortable, width: 220 }} onClick={() => handleSort("Name of Karigar 1" as SortKey)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Karigar <SortIcon dir={sortKey === "Name of Karigar 1" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={thSortRight} onClick={() => handleSort("dailyPiecesMade")}>
+              <th style={{ ...thSortRight, width: 160 }} onClick={() => handleSort("dailyPiecesMade")}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
                   <SortIcon dir={sortKey === "dailyPiecesMade" ? sortDir : "none"} />
                   Karigar Acct (Pcs)
