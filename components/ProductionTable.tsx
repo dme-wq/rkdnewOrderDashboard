@@ -296,11 +296,11 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
   // Styles
   const thBase: React.CSSProperties = {
     padding: "11px 14px",
-    fontSize: 11,
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: "0.07em",
-    color: "var(--text-muted)",
+    fontSize: 12,
+    fontWeight: 800,
+    textTransform: "capitalize",
+    letterSpacing: "0.02em",
+    color: "var(--text-primary)",
     background: "var(--bg-elevated)",
     borderBottom: "1px solid var(--border)",
     whiteSpace: "nowrap",
@@ -534,25 +534,25 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
           {/* Header */}
           <thead>
             <tr>
-              <th style={{ ...thBase, width: 44, paddingLeft: 18, textAlign: "center" }}>#</th>
-              <th style={{ ...thSortable, width: 100 }} onClick={() => handleSort("Date")}>
+              <th style={{ ...thBase, width: 50, paddingLeft: 18, textAlign: "center" }}>#</th>
+              <th style={{ ...thSortable, width: 110 }} onClick={() => handleSort("Date")}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Date <SortIcon dir={sortKey === "Date" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={{ ...thSortable, width: 130 }} onClick={() => handleSort("Buyer PO Number" as SortKey)}>
+              <th style={{ ...thSortable, width: "16%" }} onClick={() => handleSort("Buyer PO Number" as SortKey)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   PO Number <SortIcon dir={sortKey === "Buyer PO Number" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={{ ...thSortable, width: "auto", minWidth: 180 }} onClick={() => handleSort("Design Name" as SortKey)}>
+              <th style={{ ...thSortable, width: "auto" }} onClick={() => handleSort("Design Name" as SortKey)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Design <SortIcon dir={sortKey === "Design Name" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={{ ...thBase, width: 100 }}>Color</th>
-              <th style={{ ...thBase, width: 110 }}>Size</th>
-              <th style={{ ...thSortable, width: 220 }} onClick={() => handleSort("Name of Karigar 1" as SortKey)}>
+              <th style={{ ...thBase, width: "12%" }}>Color</th>
+              <th style={{ ...thBase, width: "12%" }}>Size</th>
+              <th style={{ ...thSortable, width: "24%" }} onClick={() => handleSort("Name of Karigar 1" as SortKey)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Karigar <SortIcon dir={sortKey === "Name of Karigar 1" ? sortDir : "none"} />
                 </div>
