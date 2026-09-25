@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RefreshCw, Sun, Moon, Calendar, CalendarDays, BarChart3, Trophy, Layers } from "lucide-react";
+import { RefreshCw, Sun, Moon, Calendar, CalendarDays, BarChart3, Layers } from "lucide-react";
 import { useTheme } from "next-themes";
 import { AggregatedStats } from "@/lib/types";
 
@@ -162,7 +162,6 @@ const CHIP_CONFIG = [
   { label: "This Week",key: "thisWeekPieces"    as const, Icon: CalendarDays, gradient: "linear-gradient(140deg,#5b21b6,#8b5cf6)", glow: "rgba(139,92,246,0.50)" },
   { label: "Month",    key: "thisMonthPieces"   as const, Icon: Layers,       gradient: "linear-gradient(140deg,#9f1239,#e11d48)", glow: "rgba(225,29,72,0.50)"  },
   { label: "Quarter",  key: "thisQuarterPieces" as const, Icon: BarChart3,    gradient: "linear-gradient(140deg,#92400e,#d97706)", glow: "rgba(217,119,6,0.50)"  },
-  { label: "All Time", key: "allTimePieces"     as const, Icon: Trophy,       gradient: "linear-gradient(140deg,#065f46,#059669)", glow: "rgba(5,150,105,0.50)"  },
 ];
 
 export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: TopbarProps) {
