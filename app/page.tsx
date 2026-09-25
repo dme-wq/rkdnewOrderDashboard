@@ -8,6 +8,7 @@ import { Topbar } from "@/components/Topbar";
 import { KarigarRanking } from "@/components/KarigarRanking";
 import { ChartsRow } from "@/components/ChartsRow";
 import { ProductionTable } from "@/components/ProductionTable";
+import { TableMiniStats } from "@/components/TableMiniStats";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 const DEFAULT_FILTERS: ActiveFilters = {
@@ -23,6 +24,7 @@ const DEFAULT_FILTERS: ActiveFilters = {
 async function fetchProductionClient(): Promise<ApiResponse> {
   const proxyUrl = new URL("/api/production", window.location.origin);
   proxyUrl.searchParams.append("t", Date.now().toString());
+  proxyUrl.searchParams.append("r", Math.random().toString(36).slice(2));
 
   const proxyRes = await fetch(proxyUrl.toString(), {
     cache: "no-store",
@@ -42,28 +44,44 @@ export default function DashboardPage() {
   const { data, isLoading, isError, error, dataUpdatedAt } = useQuery<ApiResponse>({
     queryKey: ["production"],
     queryFn: fetchProductionClient,
-    refetchInterval: 5 * 1000,          // Poll every 5 seconds
-    refetchIntervalInBackground: true,   // Keep polling even when tab is in background
+    refetchInterval: 5 * 1000,
+    refetchIntervalInBackground: true,
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
 
+  // ── All processed rows (no filter applied) ───────────────────────────────────
   const processedRows = useMemo<ProcessedRow[]>(() => {
     if (!data?.dataEntry) return [];
     return computeDailyDelta(data.dataEntry, data.productionMaster ?? []);
   }, [data]);
 
+  // ── Filtered rows for the data table ─────────────────────────────────────────
   const filteredRows = useMemo<ProcessedRow[]>(
     () => applyFilters(processedRows, filters),
     [processedRows, filters]
   );
 
-  const stats = useMemo(() => {
-    if (filteredRows.length === 0 && !isLoading) return null;
-    return aggregateStats(filteredRows);
-  }, [filteredRows, isLoading]);
+  // ── GLOBAL stats — always computed from ALL data, independent of table filters
+  // This is what Topbar chips + Charts use. Never changes when table filter changes.
+  const globalStats = useMemo(() => {
+    if (processedRows.length === 0 && !isLoading) return null;
+    return aggregateStats(processedRows);
+  }, [processedRows, isLoading]);
+
+  // ── TABLE stats — computed from FILTERED rows only
+  // Used by the mini scorecard above the table.
+  const tableTotalPieces = useMemo(
+    () => filteredRows.reduce((sum, r) => sum + r.dailyPiecesMade, 0),
+    [filteredRows]
+  );
+  const tableKarigarCount = useMemo(
+    () => new Set(filteredRows.map((r) => r.karigarInfo.name).filter(Boolean)).size,
+    [filteredRows]
+  );
+  const tableRecordCount = filteredRows.length;
 
   const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : null;
   const handleRefresh = () => queryClient.invalidateQueries({ queryKey: ["production"] });
@@ -73,13 +91,13 @@ export default function DashboardPage() {
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", width: "100%" }}>
       <div className="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", width: "100%" }}>
 
-        {/* Sticky Topbar — includes Stat Chips inside */}
+        {/* ── Sticky Topbar — GLOBAL stats chips (always full data) ── */}
         <Topbar
           lastUpdated={lastUpdated}
           isLoading={isLoading && !data}
           isError={isError}
           onRefresh={handleRefresh}
-          stats={stats}
+          stats={globalStats}
         />
 
         <div style={{ padding: 24, flex: 1 }}>
@@ -112,19 +130,33 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Charts */}
-          <ChartsRow stats={stats} isLoading={isLoading && !data} />
+          {/* ── Charts — GLOBAL (independent of table filters) ── */}
+          <ChartsRow stats={globalStats} isLoading={isLoading && !data} />
 
-          {/* Top 5 / Bottom 5 Karigars */}
+          {/* ── Karigar Rankings — GLOBAL ── */}
           <div style={{ marginTop: 20 }}>
             <KarigarRanking
-              leaderboard={stats?.karigarLeaderboard ?? []}
+              leaderboard={globalStats?.karigarLeaderboard ?? []}
               isLoading={isLoading && !data}
             />
           </div>
 
-          {/* Table */}
+          {/* ── Mini Scorecard — LINKED to table filters ── */}
           <div style={{ marginTop: 20 }}>
+            <TableMiniStats
+              totalPieces={tableTotalPieces}
+              karigarCount={tableKarigarCount}
+              recordCount={tableRecordCount}
+              isLoading={isLoading && !data}
+              hasFilter={
+                !!(filters.dateFrom || filters.poNumbers.length || filters.designNames.length ||
+                  filters.yarnColors.length || filters.karigarNames.length)
+              }
+            />
+          </div>
+
+          {/* ── Data Table — shows filteredRows ── */}
+          <div style={{ marginTop: 10 }}>
             <ProductionTable
               rows={filteredRows}
               allRows={processedRows}
