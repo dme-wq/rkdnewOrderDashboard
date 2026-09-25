@@ -15,9 +15,10 @@ export async function GET() {
   }
 
   try {
-    // Use a unique timestamp every request to bypass all caches
+    // Use timestamp + random nonce to bypass ALL caches (CDN, ISP, Apps Script)
     const targetUrl = new URL(APPS_SCRIPT_URL);
     targetUrl.searchParams.append("t", Date.now().toString());
+    targetUrl.searchParams.append("r", Math.random().toString(36).slice(2));
 
     // Follow redirects (important for Workspace-domain Google Apps Script URLs)
     const res = await fetch(targetUrl.toString(), {
@@ -26,6 +27,8 @@ export async function GET() {
       headers: {
         Accept: "application/json, text/plain, */*",
         "User-Agent": "Mozilla/5.0 (compatible; NextJS-Server/1.0)",
+        "Cache-Control": "no-cache, no-store",
+        "Pragma": "no-cache",
       },
     });
 

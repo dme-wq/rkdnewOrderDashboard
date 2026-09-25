@@ -61,14 +61,14 @@ export function ChartsRow({ stats, isLoading }: ChartsRowProps) {
     new Set(stats.dailyTrend.flatMap((d) => Object.keys(d.byKarigar)))
   );
 
-  const barData = stats.dailyTrend.map((d) => ({
-    date: d.date,
-    total: d.totalPieces,
-    ...d.byKarigar,
-  }));
+  const barData = stats.dailyTrend.map((d) => {
+    const parts = d.date.split("-");
+    const shortDate = parts.length >= 2 ? `${parts[0]}-${parts[1]}` : d.date;
+    return { date: shortDate, total: d.totalPieces, ...d.byKarigar };
+  });
 
   const lineData = stats.weeklyTrend.map((w) => ({
-    week: w.weekLabel.replace(" 2026", ""),
+    week: w.weekLabel.replace(/\s\d{4}$/, ""),
     pieces: w.totalPieces,
   }));
 

@@ -59,7 +59,7 @@ function getAvatarColor(name: string) {
 function SkeletonRow() {
   return (
     <tr>
-      {Array.from({ length: 8 }).map((_, i) => (
+      {Array.from({ length: 9 }).map((_, i) => (
         <td key={i} style={{ padding: "14px 16px" }}>
           <div
             className="skeleton"
@@ -739,6 +739,10 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                   Daily Δ
                 </div>
               </th>
+
+              <th style={{ ...thRight, width: 130, paddingRight: 20 }}>
+                Karigar Acct (Pcs)
+              </th>
             </tr>
           </thead>
 
@@ -747,7 +751,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
             {!isLoading && paginatedRows.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ padding: "64px 24px", textAlign: "center" }}>
+                <td colSpan={9} style={{ padding: "64px 24px", textAlign: "center" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
                     <div
                       style={{
@@ -978,6 +982,22 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                         {row.dailyPiecesMade > 0 ? row.dailyPiecesMade : "—"}
                       </div>
                     </td>
+
+                    {/* Karigar Account (Pieces) — Column W in sheet */}
+                    <td style={{ padding: "12px 20px 12px 16px", textAlign: "right" }}>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 700,
+                          fontVariantNumeric: "tabular-nums",
+                          color: row["Karigar Account (Pieces)"] && row["Karigar Account (Pieces)"] !== "0" && row["Karigar Account (Pieces)"] !== ""
+                            ? "var(--text-primary)"
+                            : "var(--text-muted)",
+                        }}
+                      >
+                        {row["Karigar Account (Pieces)"] || "—"}
+                      </span>
+                    </td>
                   </tr>
                 );
               })}
@@ -995,7 +1015,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                 }}
               >
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   style={{
                     padding: "11px 16px",
                     textAlign: "right",
@@ -1006,7 +1026,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                     color: "var(--text-muted)",
                   }}
                 >
-                  Grand Total
+                  Grand Total (Daily Δ)
                 </td>
                 <td style={{ padding: "11px 20px 11px 16px", textAlign: "right" }}>
                   <span

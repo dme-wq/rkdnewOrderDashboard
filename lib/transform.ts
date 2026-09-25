@@ -15,6 +15,7 @@ import {
 } from "./types";
 import {
   parseISO,
+  parse,
   isValid,
   format,
   startOfWeek,
@@ -50,8 +51,16 @@ function safeParseNum(val: string | number | undefined): number {
 
 function safeParseDate(dateStr: string): Date | null {
   if (!dateStr) return null;
-  const d = parseISO(dateStr);
-  return isValid(d) ? d : null;
+  // Try ISO format first: "yyyy-MM-dd" (e.g. from sheet raw values)
+  const iso = parseISO(dateStr);
+  if (isValid(iso)) return iso;
+  // Try "dd-MMM-yyyy" format (e.g. "25-Sep-2026") — the normalized format
+  const dmy = parse(dateStr, "dd-MMM-yyyy", new Date());
+  if (isValid(dmy)) return dmy;
+  // Try "d-MMM-yyyy" format (single digit day)
+  const dmy2 = parse(dateStr, "d-MMM-yyyy", new Date());
+  if (isValid(dmy2)) return dmy2;
+  return null;
 }
 
 // ─── Step 1: Compute daily deltas ─────────────────────────────────────────────

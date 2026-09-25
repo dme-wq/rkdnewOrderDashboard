@@ -42,7 +42,8 @@ export default function DashboardPage() {
   const { data, isLoading, isError, error, dataUpdatedAt } = useQuery<ApiResponse>({
     queryKey: ["production"],
     queryFn: fetchProductionClient,
-    refetchInterval: 10 * 1000,
+    refetchInterval: 5 * 1000,          // Poll every 5 seconds
+    refetchIntervalInBackground: true,   // Keep polling even when tab is in background
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true,
