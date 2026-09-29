@@ -27,7 +27,9 @@ async function fetchProductionClient(): Promise<ApiResponse> {
 
   const proxyRes = await fetch(proxyUrl.toString(), {
     cache: "no-store",
-    signal: AbortSignal.timeout(20000),
+    // 60s timeout — server cache returns instantly after first load
+    // Only cold-start (first ever request) can be slow from Apps Script
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!proxyRes.ok) throw new Error(`API returned HTTP ${proxyRes.status}`);
