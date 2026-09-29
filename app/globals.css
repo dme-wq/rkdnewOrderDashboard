@@ -455,6 +455,23 @@ body {
   to   { transform: rotate(360deg); }
 }
 
+/* ── Rainbow border blink for stat chips ─── */
+@keyframes rainbowBorder {
+  0%   { border-color: #ff0080; box-shadow: 0 0 18px #ff0080, 0 0 32px rgba(255,0,128,0.4); }
+  14%  { border-color: #ff4000; box-shadow: 0 0 18px #ff4000, 0 0 32px rgba(255,64,0,0.4); }
+  28%  { border-color: #ffcc00; box-shadow: 0 0 18px #ffcc00, 0 0 32px rgba(255,204,0,0.4); }
+  42%  { border-color: #00e676; box-shadow: 0 0 18px #00e676, 0 0 32px rgba(0,230,118,0.4); }
+  57%  { border-color: #00b0ff; box-shadow: 0 0 18px #00b0ff, 0 0 32px rgba(0,176,255,0.4); }
+  71%  { border-color: #651fff; box-shadow: 0 0 18px #651fff, 0 0 32px rgba(101,31,255,0.4); }
+  85%  { border-color: #d500f9; box-shadow: 0 0 18px #d500f9, 0 0 32px rgba(213,0,249,0.4); }
+  100% { border-color: #ff0080; box-shadow: 0 0 18px #ff0080, 0 0 32px rgba(255,0,128,0.4); }
+}
+
+.stat-chip-rainbow {
+  border: 3px solid #ff0080;
+  animation: rainbowBorder 2s linear infinite;
+}
+
 /* ── Slide-in dropdown ─── */
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-6px) scale(0.98); }

@@ -56,12 +56,12 @@ function StatChip({ label, value, Icon, gradient, glow }: ChipDef) {
 
   return (
     <div
+      className="stat-chip-rainbow"
       style={{
         background: gradient,
-        boxShadow: `0 0 16px ${glow}, 0 3px 10px ${glow}`,
         borderRadius: "50%",
-        width: 82,
-        height: 82,
+        width: 96,
+        height: 96,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -71,47 +71,43 @@ function StatChip({ label, value, Icon, gradient, glow }: ChipDef) {
         position: "relative",
         overflow: "hidden",
         flexShrink: 0,
-        transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease",
-        gap: 1,
+        transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+        gap: 2,
       }}
       onMouseEnter={(e) => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.transform = "scale(1.10)";
-        el.style.boxShadow = `0 0 28px ${glow}, 0 6px 20px ${glow}`;
+        (e.currentTarget as HTMLElement).style.transform = "scale(1.12)";
       }}
       onMouseLeave={(e) => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.transform = "scale(1)";
-        el.style.boxShadow = `0 0 16px ${glow}, 0 3px 10px ${glow}`;
+        (e.currentTarget as HTMLElement).style.transform = "scale(1)";
       }}
     >
       {/* Inner shine */}
       <div style={{
         position: "absolute", inset: 0, borderRadius: "50%",
-        background: "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, transparent 55%)",
+        background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 55%)",
         pointerEvents: "none",
       }} />
 
-      {/* Inner dark ring for depth */}
+      {/* Inner white ring for depth */}
       <div style={{
-        position: "absolute", inset: 3, borderRadius: "50%",
-        border: "1.5px solid rgba(255,255,255,0.14)",
+        position: "absolute", inset: 4, borderRadius: "50%",
+        border: "1.5px solid rgba(255,255,255,0.22)",
         pointerEvents: "none",
       }} />
 
-      {/* Icon */}
+      {/* Icon bubble */}
       <div style={{
-        width: 20, height: 20, borderRadius: "50%",
-        background: "rgba(255,255,255,0.22)",
+        width: 24, height: 24, borderRadius: "50%",
+        background: "rgba(255,255,255,0.25)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        zIndex: 1, flexShrink: 0, marginBottom: 1,
+        zIndex: 1, flexShrink: 0,
       }}>
-        <Icon size={11} />
+        <Icon size={13} />
       </div>
 
       {/* Number — animated */}
       <div style={{
-        fontSize: 19,
+        fontSize: 22,
         fontWeight: 900,
         letterSpacing: "-0.04em",
         lineHeight: 1,
@@ -123,15 +119,14 @@ function StatChip({ label, value, Icon, gradient, glow }: ChipDef) {
 
       {/* Label */}
       <span style={{
-        fontSize: 7,
+        fontSize: 8,
         fontWeight: 700,
         textTransform: "uppercase",
-        letterSpacing: "0.08em",
-        opacity: 0.78,
+        letterSpacing: "0.1em",
+        opacity: 0.85,
         lineHeight: 1,
         zIndex: 1,
         whiteSpace: "nowrap",
-        marginTop: 1,
       }}>
         {label}
       </span>
@@ -145,14 +140,14 @@ function SkeletonChip({ gradient, glow }: { gradient: string; glow: string }) {
       background: gradient,
       boxShadow: `0 0 10px ${glow}`,
       borderRadius: "50%",
-      width: 82, height: 82,
+      width: 96, height: 96,
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      gap: 4, opacity: 0.45, flexShrink: 0,
+      gap: 5, opacity: 0.40, flexShrink: 0,
     }}>
-      <div style={{ width: 20, height: 20, background: "rgba(255,255,255,0.25)", borderRadius: "50%" }} />
-      <div style={{ height: 6, width: "52%", background: "rgba(255,255,255,0.22)", borderRadius: 3 }} />
-      <div style={{ height: 14, width: "44%", background: "rgba(255,255,255,0.30)", borderRadius: 3 }} />
+      <div style={{ width: 24, height: 24, background: "rgba(255,255,255,0.25)", borderRadius: "50%" }} />
+      <div style={{ height: 7, width: "52%", background: "rgba(255,255,255,0.22)", borderRadius: 3 }} />
+      <div style={{ height: 16, width: "44%", background: "rgba(255,255,255,0.30)", borderRadius: 3 }} />
     </div>
   );
 }
@@ -223,7 +218,7 @@ export function Topbar({ lastUpdated, isLoading, isFetching, isError, onRefresh,
 
       {/* CENTER: Stat Circle Chips */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 10,
+        display: "flex", alignItems: "center", gap: 18,
         flex: 1, justifyContent: "center", padding: "0 20px",
       }}>
         {isLoading
