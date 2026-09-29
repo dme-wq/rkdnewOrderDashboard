@@ -24,11 +24,10 @@ const DEFAULT_FILTERS: ActiveFilters = {
 async function fetchProductionClient(): Promise<ApiResponse> {
   const proxyUrl = new URL("/api/production", window.location.origin);
   proxyUrl.searchParams.append("t", Date.now().toString());
-  proxyUrl.searchParams.append("r", Math.random().toString(36).slice(2));
 
   const proxyRes = await fetch(proxyUrl.toString(), {
     cache: "no-store",
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(20000),
   });
 
   if (!proxyRes.ok) throw new Error(`API returned HTTP ${proxyRes.status}`);
@@ -41,13 +40,15 @@ export default function DashboardPage() {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<ActiveFilters>(DEFAULT_FILTERS);
 
-  const { data, isLoading, isError, error, dataUpdatedAt } = useQuery<ApiResponse>({
+  // isLoading  = true only on FIRST load (no cached data yet)
+  // isFetching = true on every background refetch too
+  const { data, isLoading, isFetching, isError, error, dataUpdatedAt } = useQuery<ApiResponse>({
     queryKey: ["production"],
     queryFn: fetchProductionClient,
-    refetchInterval: 5 * 1000,
-    refetchIntervalInBackground: true,
-    staleTime: 0,
-    gcTime: 0,
+    refetchInterval: 60 * 1000,          // refetch every 60s (not 5s — was hammering API)
+    refetchIntervalInBackground: false,   // don't refetch when tab is hidden
+    staleTime: 30 * 1000,                // data stays fresh 30s — no unnecessary refetches
+    gcTime: 5 * 60 * 1000,              // keep in cache 5 min
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
@@ -94,7 +95,8 @@ export default function DashboardPage() {
         {/* ── Sticky Topbar — GLOBAL stats chips (always full data) ── */}
         <Topbar
           lastUpdated={lastUpdated}
-          isLoading={isLoading && !data}
+          isLoading={isLoading}        // true ONLY on first load, not background refetches
+          isFetching={isFetching}      // true during any fetch (used for subtle spinner)
           isError={isError}
           onRefresh={handleRefresh}
           stats={globalStats}
@@ -131,13 +133,13 @@ export default function DashboardPage() {
           )}
 
           {/* ── Charts — GLOBAL (independent of table filters) ── */}
-          <ChartsRow stats={globalStats} isLoading={isLoading && !data} />
+          <ChartsRow stats={globalStats} isLoading={isLoading} />
 
           {/* ── Karigar Rankings — GLOBAL ── */}
           <div style={{ marginTop: 20 }}>
             <KarigarRanking
               leaderboard={globalStats?.karigarLeaderboard ?? []}
-              isLoading={isLoading && !data}
+              isLoading={isLoading}
             />
           </div>
 
@@ -147,7 +149,7 @@ export default function DashboardPage() {
               totalPieces={tableTotalPieces}
               karigarCount={tableKarigarCount}
               recordCount={tableRecordCount}
-              isLoading={isLoading && !data}
+              isLoading={isLoading}
               hasFilter={
                 !!(filters.dateFrom || filters.poNumbers.length || filters.designNames.length ||
                   filters.yarnColors.length || filters.karigarNames.length)
@@ -162,7 +164,7 @@ export default function DashboardPage() {
               allRows={processedRows}
               filters={filters}
               onFiltersChange={setFilters}
-              isLoading={isLoading && !data}
+              isLoading={isLoading}
             />
           </div>
 

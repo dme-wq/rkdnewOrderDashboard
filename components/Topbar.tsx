@@ -7,7 +7,8 @@ import { AggregatedStats } from "@/lib/types";
 
 interface TopbarProps {
   lastUpdated: string | null;
-  isLoading: boolean;
+  isLoading: boolean;   // true ONLY on first load (no data yet)
+  isFetching: boolean;  // true on every background refetch too
   isError: boolean;
   onRefresh: () => void;
   stats: AggregatedStats | null;
@@ -158,13 +159,13 @@ function SkeletonChip({ gradient, glow }: { gradient: string; glow: string }) {
 
 // ── Topbar ───────────────────────────────────────────────────────────────────
 const CHIP_CONFIG = [
-  { label: "Today",    key: "todayPieces"       as const, Icon: Calendar,     gradient: "linear-gradient(140deg,#3730a3,#6366f1)", glow: "rgba(99,102,241,0.50)"  },
-  { label: "This Week",key: "thisWeekPieces"    as const, Icon: CalendarDays, gradient: "linear-gradient(140deg,#5b21b6,#8b5cf6)", glow: "rgba(139,92,246,0.50)" },
-  { label: "Month",    key: "thisMonthPieces"   as const, Icon: Layers,       gradient: "linear-gradient(140deg,#9f1239,#e11d48)", glow: "rgba(225,29,72,0.50)"  },
-  { label: "Quarter",  key: "thisQuarterPieces" as const, Icon: BarChart3,    gradient: "linear-gradient(140deg,#92400e,#d97706)", glow: "rgba(217,119,6,0.50)"  },
+  { label: "Today", key: "todayPieces" as const, Icon: Calendar, gradient: "linear-gradient(140deg,#3730a3,#6366f1)", glow: "rgba(99,102,241,0.50)" },
+  { label: "This Week", key: "thisWeekPieces" as const, Icon: CalendarDays, gradient: "linear-gradient(140deg,#5b21b6,#8b5cf6)", glow: "rgba(139,92,246,0.50)" },
+  { label: "Month", key: "thisMonthPieces" as const, Icon: Layers, gradient: "linear-gradient(140deg,#9f1239,#e11d48)", glow: "rgba(225,29,72,0.50)" },
+  { label: "Quarter", key: "thisQuarterPieces" as const, Icon: BarChart3, gradient: "linear-gradient(140deg,#92400e,#d97706)", glow: "rgba(217,119,6,0.50)" },
 ];
 
-export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: TopbarProps) {
+export function Topbar({ lastUpdated, isLoading, isFetching, isError, onRefresh, stats }: TopbarProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [secondsAgo, setSecondsAgo] = useState<number | null>(null);
@@ -178,17 +179,24 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
       setSecondsAgo(diff);
     };
     update();
-    const interval = setInterval(update, 5000);
+    const interval = setInterval(update, 10000);
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
+  // syncLabel logic:
+  // - First-time load (isLoading=true, no data) → "Syncing..."
+  // - Background refetch (isFetching but data exists) → show last-updated time (not "Syncing...")
+  // - Error → "Sync failed"
   const syncLabel = isError
     ? "Sync failed"
     : isLoading
-    ? "Syncing..."
-    : secondsAgo !== null
-    ? secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo / 60)}m ago`
-    : "";
+      ? "Syncing..."
+      : secondsAgo !== null
+        ? secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo / 60)}m ago`
+        : "";
+
+  // Is there a background refetch in progress (but data is already shown)?
+  const isBackgroundFetching = isFetching && !isLoading;
 
   return (
     <div
@@ -218,18 +226,18 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
         display: "flex", alignItems: "center", gap: 10,
         flex: 1, justifyContent: "center", padding: "0 20px",
       }}>
-        {(isLoading && !stats)
+        {isLoading
           ? CHIP_CONFIG.map((c, i) => <SkeletonChip key={i} gradient={c.gradient} glow={c.glow} />)
           : CHIP_CONFIG.map((c) => (
-              <StatChip
-                key={c.label}
-                label={c.label}
-                value={stats ? stats[c.key] : 0}
-                Icon={c.Icon}
-                gradient={c.gradient}
-                glow={c.glow}
-              />
-            ))
+            <StatChip
+              key={c.label}
+              label={c.label}
+              value={stats ? stats[c.key] : 0}
+              Icon={c.Icon}
+              gradient={c.gradient}
+              glow={c.glow}
+            />
+          ))
         }
       </div>
 
@@ -244,10 +252,15 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
             color: isError ? "#e11d48" : "#059669",
             border: `1px solid ${isError ? "rgba(225,29,72,0.2)" : "rgba(5,150,105,0.2)"}`,
             whiteSpace: "nowrap",
+            transition: "opacity 0.3s ease",
           }}>
+            {/* First-load spinner */}
             {isLoading
               ? <RefreshCw size={10} style={{ animation: "spin 1s linear infinite" }} />
-              : <div className="live-dot" style={{ width: 6, height: 6 }} />
+              /* Subtle background-refetch indicator — tiny pulsing dot */
+              : isBackgroundFetching
+                ? <RefreshCw size={10} style={{ animation: "spin 2s linear infinite", opacity: 0.6 }} />
+                : <div className="live-dot" style={{ width: 6, height: 6 }} />
             }
             {syncLabel}
           </div>
@@ -255,10 +268,10 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
 
         <button
           id="topbar-refresh" className="topbar-btn" onClick={onRefresh}
-          disabled={isLoading} title="Refresh data"
-          style={{ opacity: isLoading ? 0.5 : 1, cursor: isLoading ? "not-allowed" : "pointer" }}
+          disabled={isFetching} title="Refresh data"
+          style={{ opacity: isFetching ? 0.5 : 1, cursor: isFetching ? "not-allowed" : "pointer" }}
         >
-          <RefreshCw size={13} style={isLoading ? { animation: "spin 1s linear infinite" } : {}} />
+          <RefreshCw size={13} style={isFetching ? { animation: "spin 1s linear infinite" } : {}} />
         </button>
 
         {mounted && (
@@ -273,3 +286,4 @@ export function Topbar({ lastUpdated, isLoading, isError, onRefresh, stats }: To
     </div>
   );
 }
+
