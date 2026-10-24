@@ -82,26 +82,6 @@ const MINI_CHIP_CONFIG = [
   },
 ];
 
-// Inline keyframe style injected once
-const RAINBOW_STYLE = `
-@keyframes rainbowCard {
-  0%   { border-color: #ff0080; box-shadow: 0 0 0 3px rgba(255,0,128,0.35), 0 8px 32px rgba(255,0,128,0.25); }
-  14%  { border-color: #ff6000; box-shadow: 0 0 0 3px rgba(255,96,0,0.35),  0 8px 32px rgba(255,96,0,0.25); }
-  28%  { border-color: #ffe000; box-shadow: 0 0 0 3px rgba(255,224,0,0.35), 0 8px 32px rgba(255,224,0,0.25); }
-  42%  { border-color: #00e676; box-shadow: 0 0 0 3px rgba(0,230,118,0.35), 0 8px 32px rgba(0,230,118,0.25); }
-  57%  { border-color: #00b0ff; box-shadow: 0 0 0 3px rgba(0,176,255,0.35), 0 8px 32px rgba(0,176,255,0.25); }
-  71%  { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.35),0 8px 32px rgba(124,58,237,0.25); }
-  85%  { border-color: #e040fb; box-shadow: 0 0 0 3px rgba(224,64,251,0.35),0 8px 32px rgba(224,64,251,0.25); }
-  100% { border-color: #ff0080; box-shadow: 0 0 0 3px rgba(255,0,128,0.35), 0 8px 32px rgba(255,0,128,0.25); }
-}
-.mini-card-rainbow {
-  border: 2.5px solid #ff0080;
-  animation: rainbowCard 2.4s linear infinite;
-}
-.mini-card-rainbow:hover {
-  transform: translateY(-5px) scale(1.05) !important;
-}
-`;
 
 function useCountUp(target: number, duration = 600) {
   const [value, setValue] = useState(0);
@@ -331,13 +311,9 @@ export function TableMiniStats({
   };
 
   return (
-    <>
-      {/* Inject rainbow animation */}
-      <style>{RAINBOW_STYLE}</style>
-
-      <div
-        style={{
-          display: "flex",
+    <div
+      style={{
+        display: "flex",
           alignItems: "center",
           padding: "14px 20px",
           borderRadius: 22,
@@ -436,6 +412,5 @@ export function TableMiniStats({
           </span>
         </div>
       </div>
-    </>
-  );
-}
+    );
+  }
