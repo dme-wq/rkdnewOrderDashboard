@@ -109,6 +109,16 @@ export function computeDailyDelta(
     );
     const dailyPiecesMade = safeParseNum(karigarAcctRaw);
 
+    // Store Receiving (Pieces) from Column Y
+    const storeReceivingRaw = getColValue(
+      row as unknown as Record<string, string>,
+      "Store Receiving (Pieces)",
+      "Store Receiving\n(Pieces)",
+      "Store Receiving(Pieces)",
+      "Store Receiving"
+    );
+    const storeReceivingPieces = safeParseNum(storeReceivingRaw);
+
     const product = row["Natural Product Code"]?.trim() ?? "";
     const poTarget = poTargetMap.get(product) ?? 0;
     const poProgress = poTarget > 0 ? Math.min(100, (currentTotal / poTarget) * 100) : 0;
@@ -128,6 +138,7 @@ export function computeDailyDelta(
       totalProductionNum: currentTotal,
       poProgress: Math.round(poProgress * 10) / 10,
       poTarget,
+      storeReceivingPieces,
     });
   }
 
@@ -163,6 +174,12 @@ export function applyFilters(
 
     // Karigar names
     if (filters.karigarNames.length > 0 && !filters.karigarNames.includes(row.karigarInfo.name)) return false;
+
+    // Responsibility (Loop, Cut, Full Piece)
+    if (filters.responsibilities && filters.responsibilities.length > 0) {
+      const resp = (row.Responsibility ?? "").trim();
+      if (!filters.responsibilities.includes(resp)) return false;
+    }
 
     return true;
   });
@@ -203,6 +220,12 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
   let thisQuarterPieces = 0;
   let lastQuarterPieces = 0;
 
+  // Store Receiving pieces by Responsibility (Column K and Column Y)
+  let loopPieces = 0;
+  let cutPieces = 0;
+  let fullPiecePieces = 0;
+  let grandTotalStoreReceiving = 0;
+
   // All-time: MAX(Total Production) per (karigar+product) group
   const maxByGroup = new Map<string, number>();
   const activeKarigarSet = new Set<string>();
@@ -227,10 +250,22 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
 
   for (const row of processedRows) {
     const pieces = row.dailyPiecesMade;
+    const srp = row.storeReceivingPieces;
+    const resp = (row.Responsibility || "").trim().toLowerCase();
     const rowDate = safeParseDate(row.Date);
     const dateStr = row.Date;
     const groupKey = `${row["Name of Karigar 1"]?.trim()}||${row["Natural Product Code"]?.trim()}`;
     const karigarName = row.karigarInfo.name;
+
+    // Responsibility Store Receiving sums
+    if (resp === "loop") {
+      loopPieces += srp;
+    } else if (resp === "cut") {
+      cutPieces += srp;
+    } else if (resp === "full piece" || resp === "fullpiece" || resp === "full_piece") {
+      fullPiecePieces += srp;
+    }
+    grandTotalStoreReceiving += srp;
 
     // Update max by group for all-time total
     const prev = maxByGroup.get(groupKey) ?? 0;
@@ -337,6 +372,11 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     lastQuarterPieces,
     allTimePieces,
     activeKarigars: activeKarigarSet.size,
+    loopPieces,
+    cutPieces,
+    loopCutPieces: loopPieces + cutPieces,
+    fullPiecePieces,
+    grandTotalStoreReceiving,
     dailyTrend,
     weeklyTrend,
     karigarLeaderboard,

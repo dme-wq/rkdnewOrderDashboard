@@ -18,6 +18,7 @@ const DEFAULT_FILTERS: ActiveFilters = {
   designNames: [],
   yarnColors: [],
   karigarNames: [],
+  responsibilities: [],
 };
 
 // Client-side fetcher — always fetches fresh, no caching
@@ -86,6 +87,27 @@ export default function DashboardPage() {
   );
   const tableRecordCount = filteredRows.length;
 
+  // Store Receiving pieces by Responsibility for filtered table data
+  const tableResponsibilityStats = useMemo(() => {
+    let loop = 0;
+    let cut = 0;
+    let fullPiece = 0;
+    let grandTotal = 0;
+    for (const r of filteredRows) {
+      const srp = r.storeReceivingPieces;
+      const resp = (r.Responsibility || "").trim().toLowerCase();
+      if (resp === "loop") {
+        loop += srp;
+      } else if (resp === "cut") {
+        cut += srp;
+      } else if (resp === "full piece" || resp === "fullpiece" || resp === "full_piece") {
+        fullPiece += srp;
+      }
+      grandTotal += srp;
+    }
+    return { loop, cut, loopCut: loop + cut, fullPiece, grandTotal };
+  }, [filteredRows]);
+
   const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : null;
   const handleRefresh = () => queryClient.invalidateQueries({ queryKey: ["production"] });
   const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -148,13 +170,18 @@ export default function DashboardPage() {
           {/* ── Mini Scorecard — LINKED to table filters ── */}
           <div style={{ marginTop: 20 }}>
             <TableMiniStats
+              grandTotal={tableResponsibilityStats.grandTotal}
+              loopPieces={tableResponsibilityStats.loop}
+              cutPieces={tableResponsibilityStats.cut}
+              loopCutPieces={tableResponsibilityStats.loopCut}
+              fullPiecePieces={tableResponsibilityStats.fullPiece}
               totalPieces={tableTotalPieces}
               karigarCount={tableKarigarCount}
               recordCount={tableRecordCount}
               isLoading={isLoading}
               hasFilter={
                 !!(filters.dateFrom || filters.poNumbers.length || filters.designNames.length ||
-                  filters.yarnColors.length || filters.karigarNames.length)
+                  filters.yarnColors.length || filters.karigarNames.length || filters.responsibilities.length)
               }
             />
           </div>

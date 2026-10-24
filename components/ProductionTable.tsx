@@ -17,7 +17,7 @@ interface ProductionTableProps {
   isLoading: boolean;
 }
 
-type SortKey = keyof ProcessedRow | "poProgress";
+type SortKey = keyof ProcessedRow | "poProgress" | "storeReceivingPieces";
 type SortDir = "asc" | "desc" | "none";
 
 const PAGE_SIZES = [10, 20, 50, 100];
@@ -87,8 +87,8 @@ function formatDate(d: string) {
 function SkeletonRow({ i }: { i: number }) {
   return (
     <tr style={{ borderBottom: "1px solid var(--border-light)" }}>
-      {[48, 90, 110, 200, 100, 90, 180, 90].map((w, j) => (
-        <td key={j} style={{ padding: "14px 16px" }}>
+      {[44, 85, 110, 170, 75, 75, 140, 95, 85, 85].map((w, j) => (
+        <td key={j} style={{ padding: "14px 14px" }}>
           <div className="skeleton" style={{
             height: j === 6 ? 28 : 13, width: `${w * (0.5 + (i * j % 5) * 0.1)}px`,
             maxWidth: "100%", borderRadius: j === 6 ? 99 : 5,
@@ -220,10 +220,14 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
   const designOptions = useMemo(() => [...new Set(allRows.map(r => r["Design Name"]).filter(Boolean))].sort(), [allRows]);
   const colorOptions = useMemo(() => [...new Set(allRows.map(r => r["Yarn Color"]).filter(Boolean).filter(c => c !== "-"))].sort(), [allRows]);
   const karigarOptions = useMemo(() => [...new Set(allRows.map(r => r.karigarInfo.name).filter(Boolean))].sort(), [allRows]);
+  const responsibilityOptions = useMemo(() =>
+    [...new Set(allRows.map(r => (r.Responsibility || "").trim()).filter(Boolean))].sort(),
+    [allRows]
+  );
 
   const isFiltered =
     !!(filters.dateFrom || filters.poNumbers.length || filters.designNames.length ||
-      filters.yarnColors.length || filters.karigarNames.length) || !!searchQuery;
+      filters.yarnColors.length || filters.karigarNames.length || filters.responsibilities?.length) || !!searchQuery;
 
   // Search
   const searchedRows = useMemo(() => {
@@ -234,7 +238,8 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       r["Design Name"]?.toLowerCase().includes(q) ||
       r.karigarInfo.name?.toLowerCase().includes(q) ||
       r["Yarn Color"]?.toLowerCase().includes(q) ||
-      r["Size"]?.toLowerCase().includes(q)
+      r["Size"]?.toLowerCase().includes(q) ||
+      r.Responsibility?.toLowerCase().includes(q)
     );
   }, [rows, searchQuery]);
 
@@ -244,7 +249,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
     return [...searchedRows].sort((a, b) => {
       let av: unknown = a[sortKey as keyof ProcessedRow];
       let bv: unknown = b[sortKey as keyof ProcessedRow];
-      if (sortKey === "dailyPiecesMade" || sortKey === "totalProductionNum" || sortKey === "poProgress") {
+      if (sortKey === "dailyPiecesMade" || sortKey === "totalProductionNum" || sortKey === "poProgress" || sortKey === "storeReceivingPieces") {
         av = Number(av) || 0; bv = Number(bv) || 0;
         return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
       }
@@ -259,6 +264,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
   const safePage = Math.min(page, totalPages);
   const paginatedRows = sortedRows.slice((safePage - 1) * pageSize, safePage * pageSize);
   const grandTotal = useMemo(() => searchedRows.reduce((s, r) => s + r.dailyPiecesMade, 0), [searchedRows]);
+  const grandTotalStoreRecv = useMemo(() => searchedRows.reduce((s, r) => s + r.storeReceivingPieces, 0), [searchedRows]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : d === "desc" ? "none" : "asc");
@@ -289,7 +295,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
     setActivePreset(null);
     setShowCustomDate(false);
     setSearchQuery("");
-    onFiltersChange({ dateFrom: "", dateTo: "", poNumbers: [], designNames: [], yarnColors: [], karigarNames: [] });
+    onFiltersChange({ dateFrom: "", dateTo: "", poNumbers: [], designNames: [], yarnColors: [], karigarNames: [], responsibilities: [] });
     setPage(1);
   };
 
@@ -529,6 +535,8 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
             onChange={v => { onFiltersChange({ ...filters, yarnColors: v }); setPage(1); }} />
           <MultiSelectDropdown label="Karigar" options={karigarOptions} selected={filters.karigarNames}
             onChange={v => { onFiltersChange({ ...filters, karigarNames: v }); setPage(1); }} />
+          <MultiSelectDropdown label="Responsibility" options={responsibilityOptions} selected={filters.responsibilities || []}
+            onChange={v => { onFiltersChange({ ...filters, responsibilities: v }); setPage(1); }} />
         </div>
       </div>
 
@@ -539,13 +547,13 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
           {/* Header */}
           <thead>
             <tr>
-              <th style={{ ...thBase, width: 50, paddingLeft: 18, textAlign: "center" }}>#</th>
-              <th style={{ ...thSortable, width: 110 }} onClick={() => handleSort("Date")}>
+              <th style={{ ...thBase, width: 44, paddingLeft: 14, textAlign: "center" }}>#</th>
+              <th style={{ ...thSortable, width: 95 }} onClick={() => handleSort("Date")}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   Date <SortIcon dir={sortKey === "Date" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={{ ...thSortable, width: "16%" }} onClick={() => handleSort("Buyer PO Number" as SortKey)}>
+              <th style={{ ...thSortable, width: "13%" }} onClick={() => handleSort("Buyer PO Number" as SortKey)}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   PO Number <SortIcon dir={sortKey === "Buyer PO Number" ? sortDir : "none"} />
                 </div>
@@ -555,14 +563,25 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                   Design <SortIcon dir={sortKey === "Design Name" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={{ ...thBase, width: "12%", textAlign: "center" }}>Color</th>
-              <th style={{ ...thBase, width: "12%", textAlign: "center" }}>Size</th>
-              <th style={{ ...thSortable, width: "24%" }} onClick={() => handleSort("Name of Karigar 1" as SortKey)}>
+              <th style={{ ...thBase, width: "9%", textAlign: "center" }}>Color</th>
+              <th style={{ ...thBase, width: "10%", textAlign: "center" }}>Size</th>
+              <th style={{ ...thSortable, width: "18%" }} onClick={() => handleSort("Name of Karigar 1" as SortKey)}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   Karigar <SortIcon dir={sortKey === "Name of Karigar 1" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={{ ...thSortRight, width: 160 }} onClick={() => handleSort("dailyPiecesMade")}>
+              <th style={{ ...thSortable, width: 125 }} onClick={() => handleSort("Responsibility" as SortKey)}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  Responsibility <SortIcon dir={sortKey === "Responsibility" ? sortDir : "none"} />
+                </div>
+              </th>
+              <th style={{ ...thSortRight, width: 135 }} onClick={() => handleSort("storeReceivingPieces")}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  <SortIcon dir={sortKey === "storeReceivingPieces" ? sortDir : "none"} />
+                  Store Recv (Pcs)
+                </div>
+              </th>
+              <th style={{ ...thSortRight, width: 135 }} onClick={() => handleSort("dailyPiecesMade")}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   <SortIcon dir={sortKey === "dailyPiecesMade" ? sortDir : "none"} />
                   Karigar Acct (Pcs)
@@ -577,7 +596,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
             {!isLoading && paginatedRows.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ padding: "72px 24px", textAlign: "center" }}>
+                <td colSpan={10} style={{ padding: "72px 24px", textAlign: "center" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
                     <div style={{
                       width: 64, height: 64, borderRadius: 20,
@@ -729,6 +748,55 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                     </div>
                   </td>
 
+                  {/* Responsibility */}
+                  <td style={{ ...tdBase, width: 120 }}>
+                    {row.Responsibility ? (
+                      <span style={{
+                        display: "inline-block",
+                        padding: "3px 9px", borderRadius: 7,
+                        background:
+                          row.Responsibility.toLowerCase() === "loop" ? "rgba(59,130,246,0.12)" :
+                          row.Responsibility.toLowerCase() === "cut" ? "rgba(124,58,237,0.12)" :
+                          "rgba(225,29,72,0.12)",
+                        color:
+                          row.Responsibility.toLowerCase() === "loop" ? "#2563eb" :
+                          row.Responsibility.toLowerCase() === "cut" ? "#7c3aed" :
+                          "#e11d48",
+                        border: `1px solid ${
+                          row.Responsibility.toLowerCase() === "loop" ? "rgba(59,130,246,0.25)" :
+                          row.Responsibility.toLowerCase() === "cut" ? "rgba(124,58,237,0.25)" :
+                          "rgba(225,29,72,0.25)"
+                        }`,
+                        fontSize: 11.5, fontWeight: 700, letterSpacing: "-0.01em",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {row.Responsibility}
+                      </span>
+                    ) : <span style={{ color: "var(--text-muted)", fontSize: 12 }}>—</span>}
+                  </td>
+
+                  {/* Store Receiving Pieces */}
+                  <td style={{ ...tdBase, textAlign: "center" }}>
+                    {row.storeReceivingPieces > 0 ? (
+                      <div style={{
+                        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4,
+                        padding: "4px 10px", borderRadius: 99,
+                        background: "linear-gradient(135deg,rgba(16,185,129,0.12),rgba(16,185,129,0.06))",
+                        border: "1px solid rgba(16,185,129,0.24)",
+                      }}>
+                        <span style={{
+                          fontSize: 13, fontWeight: 800,
+                          color: "#059669",
+                          fontVariantNumeric: "tabular-nums",
+                        }}>
+                          {row.storeReceivingPieces.toLocaleString()}
+                        </span>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500 }}>0</span>
+                    )}
+                  </td>
+
                   {/* Karigar Account Pieces */}
                   <td style={{ ...tdBase, textAlign: "center", paddingRight: 14 }}>
                     {pieces > 0 ? (
@@ -774,21 +842,44 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                 }}>
                   Grand Total — {sortedRows.length.toLocaleString()} records
                 </td>
-                <td style={{ padding: "13px 20px 13px 14px", textAlign: "right" }}>
+                <td style={{ padding: "13px 8px", textAlign: "center" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>
+                    Totals →
+                  </span>
+                </td>
+                <td style={{ padding: "13px 10px", textAlign: "center" }}>
                   <div style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "5px 14px", borderRadius: 99,
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                    padding: "5px 12px", borderRadius: 99,
                     background: "linear-gradient(135deg,#059669,#065f46)",
-                    boxShadow: "0 2px 10px rgba(5,150,105,0.35)",
+                    boxShadow: "0 2px 8px rgba(5,150,105,0.30)",
                   }}>
                     <span style={{
-                      fontSize: 16, fontWeight: 900, color: "#fff",
-                      fontVariantNumeric: "tabular-nums", letterSpacing: "-0.03em",
+                      fontSize: 14, fontWeight: 900, color: "#fff",
+                      fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
+                    }}>
+                      {grandTotalStoreRecv.toLocaleString()}
+                    </span>
+                    <span style={{ fontSize: 8.5, fontWeight: 700, color: "rgba(255,255,255,0.75)", textTransform: "uppercase" }}>
+                      recv
+                    </span>
+                  </div>
+                </td>
+                <td style={{ padding: "13px 18px 13px 10px", textAlign: "center" }}>
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                    padding: "5px 12px", borderRadius: 99,
+                    background: "linear-gradient(135deg,#4f46e5,#3730a3)",
+                    boxShadow: "0 2px 8px rgba(99,102,241,0.30)",
+                  }}>
+                    <span style={{
+                      fontSize: 14, fontWeight: 900, color: "#fff",
+                      fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
                     }}>
                       {grandTotal.toLocaleString()}
                     </span>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.75)", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                      pcs
+                    <span style={{ fontSize: 8.5, fontWeight: 700, color: "rgba(255,255,255,0.75)", textTransform: "uppercase" }}>
+                      acct
                     </span>
                   </div>
                 </td>

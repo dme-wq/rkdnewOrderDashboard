@@ -51,6 +51,7 @@ export interface ProcessedRow extends DataEntryRow {
   totalProductionNum: number; // parsed numeric
   poProgress: number; // 0–100 percent
   poTarget: number;
+  storeReceivingPieces: number; // parsed numeric Store Receiving (Pieces)
 }
 
 // Daily aggregated production
@@ -89,6 +90,12 @@ export interface AggregatedStats {
   lastQuarterPieces: number;
   allTimePieces: number;
   activeKarigars: number;
+  // Store Receiving by Responsibility (from Column K and Column Y)
+  loopPieces: number;
+  cutPieces: number;
+  loopCutPieces: number;
+  fullPiecePieces: number;
+  grandTotalStoreReceiving: number;
   dailyTrend: DailyProduction[]; // last 14 days
   weeklyTrend: WeeklyProduction[]; // last 8 weeks
   karigarLeaderboard: KarigarStat[];
@@ -102,6 +109,7 @@ export interface ActiveFilters {
   designNames: string[];
   yarnColors: string[];
   karigarNames: string[];
+  responsibilities: string[];
 }
 
 export type DatePreset = "today" | "thisWeek" | "thisMonth" | "thisQuarter" | "custom";
