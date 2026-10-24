@@ -300,14 +300,6 @@ const PERIOD_CHIPS = [
     gradient: "linear-gradient(140deg,#9f1239,#be123c,#e11d48)",
     glow: "rgba(225,29,72,0.50)",
   },
-  {
-    label: "Quarter",
-    sublabel: "Production",
-    key: "thisQuarterPieces" as const,
-    Icon: BarChart3,
-    gradient: "linear-gradient(140deg,#92400e,#b45309,#d97706)",
-    glow: "rgba(217,119,6,0.50)",
-  },
 ];
 
 type TopbarViewMode = "receiving" | "production" | "all";
@@ -498,7 +490,7 @@ export function Topbar({
               boxShadow: viewMode === "all" ? "0 2px 6px rgba(168,85,247,0.35)" : "none",
             }}
           >
-            <Sparkles size={11} /> All (9)
+            <Sparkles size={11} /> All (8)
           </button>
         </div>
 
