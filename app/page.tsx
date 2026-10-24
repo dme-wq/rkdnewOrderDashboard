@@ -105,7 +105,14 @@ export default function DashboardPage() {
       }
       grandTotal += srp;
     }
-    return { loop, cut, loopCut: loop + cut, fullPiece, grandTotal };
+    return {
+      loop,
+      cut,
+      loopCut: loop + cut,
+      fullPiece,
+      fullPieceCut: fullPiece + cut,
+      grandTotal,
+    };
   }, [filteredRows]);
 
   const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : null;
@@ -175,6 +182,7 @@ export default function DashboardPage() {
               cutPieces={tableResponsibilityStats.cut}
               loopCutPieces={tableResponsibilityStats.loopCut}
               fullPiecePieces={tableResponsibilityStats.fullPiece}
+              fullPieceCutPieces={tableResponsibilityStats.fullPieceCut}
               totalPieces={tableTotalPieces}
               karigarCount={tableKarigarCount}
               recordCount={tableRecordCount}

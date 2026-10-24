@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, Layers, Users, Filter, Scissors, RefreshCw, Award, GitMerge } from "lucide-react";
+import {
+  FileText,
+  Layers,
+  Users,
+  Filter,
+  Scissors,
+  RefreshCw,
+  Award,
+  GitMerge,
+  Sparkles,
+} from "lucide-react";
 
 interface TableMiniStatsProps {
   grandTotal: number;
@@ -9,6 +19,7 @@ interface TableMiniStatsProps {
   cutPieces: number;
   loopCutPieces?: number;
   fullPiecePieces: number;
+  fullPieceCutPieces?: number;
   karigarCount: number;
   recordCount: number;
   totalPieces?: number;
@@ -16,72 +27,64 @@ interface TableMiniStatsProps {
   hasFilter: boolean;
 }
 
-const MINI_CHIP_CONFIG = [
+const MINI_CARDS_CONFIG = [
   {
     id: "mini-stat-grand-total",
     label: "Grand Total",
-    sublabel: "Store Recv",
+    unit: "pcs",
     icon: Award,
-    gradient: "linear-gradient(145deg,#064e3b,#059669,#10b981)",
-    glow: "rgba(16,185,129,0.55)",
     valueKey: "grandTotal" as const,
   },
   {
     id: "mini-stat-loop",
     label: "Loop",
-    sublabel: "Store Recv",
+    unit: "pcs",
     icon: RefreshCw,
-    gradient: "linear-gradient(145deg,#1e3a8a,#2563eb,#60a5fa)",
-    glow: "rgba(59,130,246,0.55)",
     valueKey: "loop" as const,
   },
   {
     id: "mini-stat-cut",
     label: "Cut",
-    sublabel: "Store Recv",
+    unit: "pcs",
     icon: Scissors,
-    gradient: "linear-gradient(145deg,#581c87,#7c3aed,#c084fc)",
-    glow: "rgba(147,51,234,0.55)",
     valueKey: "cut" as const,
   },
   {
     id: "mini-stat-loop-cut",
     label: "Loop + Cut",
-    sublabel: "Combined",
+    unit: "pcs",
     icon: GitMerge,
-    gradient: "linear-gradient(145deg,#0284c7,#4f46e5,#7c3aed)",
-    glow: "rgba(99,102,241,0.55)",
     valueKey: "loopCut" as const,
   },
   {
     id: "mini-stat-full-piece",
     label: "Full Piece",
-    sublabel: "Store Recv",
+    unit: "pcs",
     icon: Layers,
-    gradient: "linear-gradient(145deg,#881337,#e11d48,#fb7185)",
-    glow: "rgba(225,29,72,0.55)",
     valueKey: "fullPiece" as const,
+  },
+  {
+    id: "mini-stat-full-piece-cut",
+    label: "Full Piece + Cut",
+    unit: "pcs",
+    icon: Sparkles,
+    valueKey: "fullPieceCut" as const,
   },
   {
     id: "mini-stat-karigars",
     label: "Karigars",
-    sublabel: "Active",
+    unit: "active",
     icon: Users,
-    gradient: "linear-gradient(145deg,#78350f,#d97706,#fbbf24)",
-    glow: "rgba(217,119,6,0.55)",
     valueKey: "karigars" as const,
   },
   {
     id: "mini-stat-records",
     label: "Records",
-    sublabel: "Filtered",
+    unit: "total",
     icon: FileText,
-    gradient: "linear-gradient(145deg,#312e81,#4f46e5,#818cf8)",
-    glow: "rgba(99,102,241,0.55)",
     valueKey: "records" as const,
   },
 ];
-
 
 function useCountUp(target: number, duration = 600) {
   const [value, setValue] = useState(0);
@@ -112,179 +115,125 @@ function useCountUp(target: number, duration = 600) {
   return value;
 }
 
-function MiniChip({
+function MiniScorecard({
   id,
   label,
-  sublabel,
+  unit,
   value,
   Icon,
-  gradient,
 }: {
   id: string;
   label: string;
-  sublabel?: string;
+  unit: string;
   value: number;
   Icon: React.ElementType;
-  gradient: string;
 }) {
   const display = useCountUp(value);
 
   return (
     <div
       id={id}
-      className="mini-card-rainbow"
+      className="pro-stat-card"
       style={{
-        background: gradient,
-        borderRadius: 20,
-        width: 96,
-        height: 96,
+        flex: "1 1 0",
+        minWidth: 125,
+        height: 72,
+        padding: "9px 12px",
+        borderRadius: 12,
+        background: "var(--bg-elevated)",
+        border: "1.5px solid var(--border)",
+        boxShadow: "var(--shadow-sm)",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#fff",
+        justifyContent: "space-between",
         cursor: "default",
-        position: "relative",
         overflow: "hidden",
-        flexShrink: 0,
-        transition: "transform 0.22s cubic-bezier(0.34,1.56,0.64,1)",
-        gap: 2,
       }}
     >
-      {/* Top-left shine orb */}
-      <div
-        style={{
-          position: "absolute",
-          top: -16,
-          left: -16,
-          width: 54,
-          height: 54,
-          background: "rgba(255,255,255,0.20)",
-          borderRadius: "50%",
-          pointerEvents: "none",
-          filter: "blur(5px)",
-        }}
-      />
-
-      {/* Glass inner shine */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: 18,
-          background: "linear-gradient(135deg, rgba(255,255,255,0.28) 0%, transparent 52%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Inner white border for depth */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 3.5,
-          borderRadius: 16,
-          border: "1.5px solid rgba(255,255,255,0.24)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Icon bubble */}
-      <div
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 8,
-          background: "rgba(255,255,255,0.24)",
-          backdropFilter: "blur(4px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1,
-          flexShrink: 0,
-          boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-        }}
-      >
-        <Icon size={13} />
-      </div>
-
-      {/* Number */}
-      <div
-        style={{
-          fontSize: 20,
-          fontWeight: 900,
-          letterSpacing: "-0.05em",
-          lineHeight: 1,
-          fontVariantNumeric: "tabular-nums",
-          zIndex: 1,
-          textShadow: "0 2px 8px rgba(0,0,0,0.25)",
-        }}
-      >
-        {display.toLocaleString()}
-      </div>
-
-      {/* Label */}
-      <span
-        style={{
-          fontSize: 8,
-          fontWeight: 800,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          opacity: 0.92,
-          lineHeight: 1,
-          zIndex: 1,
-          whiteSpace: "nowrap",
-        }}
-      >
-        {label}
-      </span>
-
-      {/* Sublabel */}
-      {sublabel && (
+      {/* Top Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
         <span
           style={{
-            fontSize: 6,
+            fontSize: 9.5,
             fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: "0.05em",
-            opacity: 0.75,
-            lineHeight: 1,
-            zIndex: 1,
+            color: "var(--text-secondary)",
             whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
-          {sublabel}
+          {label}
         </span>
-      )}
+        <div
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 6,
+            background: "rgba(99, 102, 241, 0.10)",
+            color: "#6366f1",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Icon size={11} />
+        </div>
+      </div>
+
+      {/* Bottom Value */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+        <span
+          style={{
+            fontSize: 19,
+            fontWeight: 800,
+            color: "var(--text-primary)",
+            lineHeight: 1,
+            letterSpacing: "-0.03em",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {display.toLocaleString()}
+        </span>
+        <span
+          style={{
+            fontSize: 9.5,
+            fontWeight: 600,
+            color: "var(--text-muted)",
+            textTransform: "uppercase",
+          }}
+        >
+          {unit}
+        </span>
+      </div>
     </div>
   );
 }
 
-function SkeletonMiniChip({ gradient }: { gradient: string }) {
+function SkeletonMiniCard() {
   return (
     <div
       style={{
-        background: gradient,
-        borderRadius: 20,
-        width: 96,
-        height: 96,
+        flex: "1 1 0",
+        minWidth: 125,
+        height: 72,
+        padding: "9px 12px",
+        borderRadius: 12,
+        background: "var(--bg-elevated)",
+        border: "1.5px solid var(--border)",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        opacity: 0.38,
-        flexShrink: 0,
-        gap: 4,
+        justifyContent: "space-between",
+        opacity: 0.5,
       }}
     >
-      <div
-        style={{ width: 24, height: 24, background: "rgba(255,255,255,0.25)", borderRadius: 8 }}
-      />
-      <div
-        style={{ height: 7, width: "50%", background: "rgba(255,255,255,0.30)", borderRadius: 4 }}
-      />
-      <div
-        style={{ height: 5, width: "60%", background: "rgba(255,255,255,0.20)", borderRadius: 4 }}
-      />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ height: 9, width: "55%", background: "var(--border)", borderRadius: 4 }} />
+        <div style={{ width: 20, height: 20, background: "var(--border)", borderRadius: 5 }} />
+      </div>
+      <div style={{ height: 18, width: "40%", background: "var(--border)", borderRadius: 4 }} />
     </div>
   );
 }
@@ -295,6 +244,7 @@ export function TableMiniStats({
   cutPieces,
   loopCutPieces,
   fullPiecePieces,
+  fullPieceCutPieces,
   karigarCount,
   recordCount,
   isLoading,
@@ -306,6 +256,7 @@ export function TableMiniStats({
     cut: cutPieces,
     loopCut: loopCutPieces !== undefined ? loopCutPieces : loopPieces + cutPieces,
     fullPiece: fullPiecePieces,
+    fullPieceCut: fullPieceCutPieces !== undefined ? fullPieceCutPieces : fullPiecePieces + cutPieces,
     karigars: karigarCount,
     records: recordCount,
   };
@@ -314,103 +265,102 @@ export function TableMiniStats({
     <div
       style={{
         display: "flex",
-          alignItems: "center",
-          padding: "14px 20px",
-          borderRadius: 22,
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
-          gap: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        {/* Left: filter badge */}
-        <div style={{ display: "flex", alignItems: "center", minWidth: 120 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "6px 13px",
-              borderRadius: 10,
-              background: hasFilter ? "rgba(99,102,241,0.10)" : "var(--bg-elevated)",
-              border: `1px solid ${hasFilter ? "rgba(99,102,241,0.22)" : "var(--border)"}`,
-            }}
-          >
-            <Filter size={13} color={hasFilter ? "#6366f1" : "var(--text-muted)"} />
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: hasFilter ? "#6366f1" : "var(--text-muted)",
-                letterSpacing: "-0.01em",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {hasFilter ? "Filtered" : "All Data"}
-            </span>
-          </div>
-        </div>
-
-        {/* Center: Responsibility & Summary Cards */}
+        alignItems: "center",
+        padding: "12px 18px",
+        borderRadius: 18,
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+        gap: 14,
+        flexWrap: "wrap",
+      }}
+    >
+      {/* Left: filter badge */}
+      <div style={{ display: "flex", alignItems: "center", minWidth: 110 }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 12,
-            flex: 1,
-            justifyContent: "center",
-            overflowX: "auto",
-            padding: "4px 0",
+            gap: 6,
+            padding: "6px 12px",
+            borderRadius: 8,
+            background: hasFilter ? "rgba(99,102,241,0.10)" : "var(--bg-elevated)",
+            border: `1px solid ${hasFilter ? "rgba(99,102,241,0.25)" : "var(--border)"}`,
           }}
         >
-          {MINI_CHIP_CONFIG.map((c) =>
-            isLoading ? (
-              <SkeletonMiniChip key={c.id} gradient={c.gradient} />
-            ) : (
-              <MiniChip
-                key={c.id}
-                id={c.id}
-                label={c.label}
-                sublabel={c.sublabel}
-                value={values[c.valueKey] ?? 0}
-                Icon={c.icon}
-                gradient={c.gradient}
-              />
-            )
-          )}
-        </div>
-
-        {/* Right: label */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            minWidth: 120,
-          }}
-        >
+          <Filter size={12} color={hasFilter ? "#6366f1" : "var(--text-muted)"} />
           <span
             style={{
-              fontSize: 11,
+              fontSize: 11.5,
               fontWeight: 700,
-              color: "var(--text-primary)",
+              color: hasFilter ? "#6366f1" : "var(--text-secondary)",
               letterSpacing: "-0.01em",
               whiteSpace: "nowrap",
             }}
           >
-            Table Summary
-          </span>
-          <span
-            style={{
-              fontSize: 10,
-              color: "var(--text-muted)",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Store Receiving by Responsibility
+            {hasFilter ? "Filtered" : "All Data"}
           </span>
         </div>
       </div>
-    );
-  }
+
+      {/* Center: 8 Professional Mini Scorecards */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          flex: 1,
+          justifyContent: "center",
+          overflowX: "auto",
+          padding: "2px 0",
+        }}
+      >
+        {MINI_CARDS_CONFIG.map((c) =>
+          isLoading ? (
+            <SkeletonMiniCard key={c.id} />
+          ) : (
+            <MiniScorecard
+              key={c.id}
+              id={c.id}
+              label={c.label}
+              unit={c.unit}
+              value={values[c.valueKey] ?? 0}
+              Icon={c.icon}
+            />
+          )
+        )}
+      </div>
+
+      {/* Right: Clean summary label */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          minWidth: 110,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: "var(--text-primary)",
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Table Summary
+        </span>
+        <span
+          style={{
+            fontSize: 10,
+            color: "var(--text-muted)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Responsibility Metrics
+        </span>
+      </div>
+    </div>
+  );
+}

@@ -25,7 +25,6 @@ const DATE_PRESETS: { label: string; value: DatePreset | "custom" }[] = [
   { label: "Today", value: "today" },
   { label: "This Week", value: "thisWeek" },
   { label: "This Month", value: "thisMonth" },
-  { label: "This Qtr", value: "thisQuarter" },
   { label: "Custom", value: "custom" },
 ];
 
@@ -106,7 +105,7 @@ function SortIcon({ dir }: { dir: SortDir }) {
   return <ChevronsUpDown size={11} strokeWidth={2} style={{ color: "var(--text-muted)", opacity: 0.5 }} />;
 }
 
-// ─── Dropdown ─────────────────────────────────────────────────────────────────
+// ─── Searchable Multi-Select Dropdown ──────────────────────────────────────────
 function MultiSelectDropdown({
   label, options, selected, onChange, icon: Icon,
 }: {
@@ -117,87 +116,289 @@ function MultiSelectDropdown({
   icon?: React.ElementType;
 }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  // Close when clicked outside or Esc key pressed
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
+    const handleMouseDown = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && open) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  // Focus search input on open; clear search on close
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 60);
+    } else {
+      setSearch("");
+    }
+  }, [open]);
+
+  // Search filtered options
+  const filteredOptions = useMemo(() => {
+    if (!search.trim()) return options;
+    const q = search.toLowerCase().trim();
+    return options.filter(opt => opt.toLowerCase().includes(q));
+  }, [options, search]);
 
   const toggle = (v: string) => {
     onChange(selected.includes(v) ? selected.filter(x => x !== v) : [...selected, v]);
   };
 
+  const handleSelectAllFiltered = () => {
+    const allFilteredSelected = filteredOptions.length > 0 && filteredOptions.every(opt => selected.includes(opt));
+    if (allFilteredSelected) {
+      onChange(selected.filter(x => !filteredOptions.includes(x)));
+    } else {
+      const merged = Array.from(new Set([...selected, ...filteredOptions]));
+      onChange(merged);
+    }
+  };
+
   const activeCount = selected.length;
+  const allFilteredSelected = filteredOptions.length > 0 && filteredOptions.every(opt => selected.includes(opt));
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
+      {/* Trigger Button */}
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         style={{
-          display: "flex", alignItems: "center", gap: 5,
+          display: "flex", alignItems: "center", gap: 6,
           padding: "6px 11px", borderRadius: 8,
-          border: activeCount > 0 ? "1.5px solid rgba(99,102,241,0.40)" : "1px solid var(--border)",
+          border: activeCount > 0 ? "1.5px solid rgba(99,102,241,0.45)" : "1px solid var(--border)",
           background: activeCount > 0 ? "rgba(99,102,241,0.08)" : "var(--bg-elevated)",
           color: activeCount > 0 ? "#6366f1" : "var(--text-secondary)",
           fontSize: 12, fontWeight: 600, cursor: "pointer",
           fontFamily: "Inter, sans-serif",
           transition: "all 0.15s ease",
+          boxShadow: activeCount > 0 ? "0 1px 4px rgba(99,102,241,0.12)" : "none",
         }}
       >
         {Icon && <Icon size={12} />}
-        {label}
+        <span>{label}</span>
         {activeCount > 0 && (
           <span style={{
             background: "#6366f1", color: "#fff", borderRadius: 99,
             padding: "1px 6px", fontSize: 10, fontWeight: 700, lineHeight: "14px",
           }}>{activeCount}</span>
         )}
+        {activeCount > 0 && (
+          <span
+            role="button"
+            title={`Clear ${label} filter`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange([]);
+            }}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: 2, borderRadius: 4,
+              color: "#6366f1", opacity: 0.8,
+              cursor: "pointer",
+            }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = "1")}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = "0.8")}
+          >
+            <X size={11} strokeWidth={2.5} />
+          </span>
+        )}
         <ChevronDown size={11} style={{ opacity: 0.6, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
       </button>
 
+      {/* Dropdown Menu */}
       {open && (
         <div style={{
-          position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 50,
+          position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 100,
           background: "var(--bg-card)",
           border: "1px solid var(--border)",
-          borderRadius: 12, padding: 6,
-          minWidth: 200, maxHeight: 260, overflowY: "auto",
-          boxShadow: "0 12px 40px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.08)",
-          backdropFilter: "blur(12px)",
+          borderRadius: 12,
+          minWidth: 230,
+          maxWidth: 320,
+          boxShadow: "0 14px 38px rgba(0,0,0,0.16), 0 4px 12px rgba(0,0,0,0.08)",
+          backdropFilter: "blur(14px)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         }}>
-          {options.length === 0 ? (
-            <div style={{ padding: "10px 12px", fontSize: 12, color: "var(--text-muted)" }}>No options</div>
-          ) : (
-            options.map(opt => (
-              <div
-                key={opt}
-                onClick={() => toggle(opt)}
+          {/* Search Header */}
+          <div style={{
+            padding: "8px 8px 6px 8px",
+            borderBottom: "1px solid var(--border-light)",
+            background: "var(--bg-elevated)",
+          }}>
+            {/* Search Input */}
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <Search
+                size={13}
                 style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  padding: "7px 10px", borderRadius: 8, cursor: "pointer",
-                  fontSize: 12, fontWeight: 500,
-                  background: selected.includes(opt) ? "rgba(99,102,241,0.08)" : "transparent",
-                  color: selected.includes(opt) ? "#6366f1" : "var(--text-primary)",
-                  transition: "background 0.12s ease",
+                  position: "absolute",
+                  left: 9,
+                  color: "var(--text-muted)",
+                  pointerEvents: "none",
                 }}
-                onMouseEnter={e => { if (!selected.includes(opt)) (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = selected.includes(opt) ? "rgba(99,102,241,0.08)" : "transparent"; }}
+              />
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder={`Search ${label}...`}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{
+                  width: "100%",
+                  paddingLeft: 28,
+                  paddingRight: search ? 26 : 10,
+                  paddingTop: 6,
+                  paddingBottom: 6,
+                  borderRadius: 7,
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                  fontSize: 12,
+                  fontFamily: "Inter, sans-serif",
+                  outline: "none",
+                }}
+                onFocus={e => (e.target.style.borderColor = "#6366f1")}
+                onBlur={e => (e.target.style.borderColor = "var(--border)")}
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  style={{
+                    position: "absolute", right: 6,
+                    background: "none", border: "none",
+                    padding: 2, cursor: "pointer",
+                    color: "var(--text-muted)",
+                    display: "flex", alignItems: "center",
+                  }}
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* Quick Action Toolbar */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingTop: 6,
+              paddingInline: 2,
+              fontSize: 11,
+            }}>
+              <button
+                type="button"
+                onClick={handleSelectAllFiltered}
+                disabled={filteredOptions.length === 0}
+                style={{
+                  background: "none", border: "none",
+                  padding: "2px 4px", color: "#6366f1",
+                  fontSize: 11, fontWeight: 600,
+                  cursor: filteredOptions.length === 0 ? "not-allowed" : "pointer",
+                  opacity: filteredOptions.length === 0 ? 0.4 : 1,
+                  borderRadius: 4,
+                }}
               >
-                <div style={{
-                  width: 16, height: 16, borderRadius: 5,
-                  border: selected.includes(opt) ? "none" : "1.5px solid var(--border)",
-                  background: selected.includes(opt) ? "#6366f1" : "transparent",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0, transition: "all 0.12s ease",
-                }}>
-                  {selected.includes(opt) && <Check size={10} color="#fff" strokeWidth={3} />}
-                </div>
-                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt}</span>
+                {allFilteredSelected ? "Unselect all" : `Select all (${filteredOptions.length})`}
+              </button>
+
+              {activeCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onChange([])}
+                  style={{
+                    background: "none", border: "none",
+                    padding: "2px 4px", color: "#e11d48",
+                    fontSize: 11, fontWeight: 600,
+                    cursor: "pointer", borderRadius: 4,
+                  }}
+                >
+                  Clear ({activeCount})
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Options List */}
+          <div style={{
+            padding: 6,
+            maxHeight: 220,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}>
+            {filteredOptions.length === 0 ? (
+              <div style={{
+                padding: "16px 12px",
+                textAlign: "center",
+                fontSize: 12,
+                color: "var(--text-muted)",
+              }}>
+                {search ? `No match for "${search}"` : "No options available"}
               </div>
-            ))
-          )}
+            ) : (
+              filteredOptions.map(opt => {
+                const isSelected = selected.includes(opt);
+                return (
+                  <div
+                    key={opt}
+                    onClick={() => toggle(opt)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "6px 8px", borderRadius: 7, cursor: "pointer",
+                      fontSize: 12, fontWeight: isSelected ? 600 : 500,
+                      background: isSelected ? "rgba(99,102,241,0.08)" : "transparent",
+                      color: isSelected ? "#6366f1" : "var(--text-primary)",
+                      transition: "background 0.1s ease",
+                    }}
+                    onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "var(--bg-elevated)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isSelected ? "rgba(99,102,241,0.08)" : "transparent"; }}
+                  >
+                    <div style={{
+                      width: 15, height: 15, borderRadius: 4,
+                      border: isSelected ? "none" : "1.5px solid var(--border)",
+                      background: isSelected ? "#6366f1" : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0, transition: "all 0.12s ease",
+                    }}>
+                      {isSelected && <Check size={10} color="#fff" strokeWidth={3} />}
+                    </div>
+                    <span
+                      title={opt}
+                      style={{
+                        flex: 1,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {opt}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -542,7 +743,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
       {/* ── Table ── */}
       <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "calc(100vh - 280px)" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1060 }}>
 
           {/* Header */}
           <thead>
@@ -757,15 +958,18 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                         background:
                           row.Responsibility.toLowerCase() === "loop" ? "rgba(59,130,246,0.12)" :
                           row.Responsibility.toLowerCase() === "cut" ? "rgba(124,58,237,0.12)" :
-                          "rgba(225,29,72,0.12)",
+                          row.Responsibility.toLowerCase().includes("full") ? "rgba(16,185,129,0.12)" :
+                          "rgba(245,158,11,0.12)",
                         color:
                           row.Responsibility.toLowerCase() === "loop" ? "#2563eb" :
                           row.Responsibility.toLowerCase() === "cut" ? "#7c3aed" :
-                          "#e11d48",
+                          row.Responsibility.toLowerCase().includes("full") ? "#059669" :
+                          "#d97706",
                         border: `1px solid ${
                           row.Responsibility.toLowerCase() === "loop" ? "rgba(59,130,246,0.25)" :
                           row.Responsibility.toLowerCase() === "cut" ? "rgba(124,58,237,0.25)" :
-                          "rgba(225,29,72,0.25)"
+                          row.Responsibility.toLowerCase().includes("full") ? "rgba(16,185,129,0.25)" :
+                          "rgba(245,158,11,0.25)"
                         }`,
                         fontSize: 11.5, fontWeight: 700, letterSpacing: "-0.01em",
                         whiteSpace: "nowrap",

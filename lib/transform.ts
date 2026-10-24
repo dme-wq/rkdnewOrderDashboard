@@ -119,6 +119,14 @@ export function computeDailyDelta(
     );
     const storeReceivingPieces = safeParseNum(storeReceivingRaw);
 
+    const responsibilityRaw = getColValue(
+      row as unknown as Record<string, string>,
+      "Responsibility",
+      "Responsibility 1",
+      "responsibility"
+    );
+    const responsibility = (responsibilityRaw || row.Responsibility || "").trim();
+
     const product = row["Natural Product Code"]?.trim() ?? "";
     const poTarget = poTargetMap.get(product) ?? 0;
     const poProgress = poTarget > 0 ? Math.min(100, (currentTotal / poTarget) * 100) : 0;
@@ -133,6 +141,7 @@ export function computeDailyDelta(
     processed.push({
       ...row,
       Date: rowDateStr, // Override Date with the standardized format
+      Responsibility: responsibility,
       karigarInfo: parseKarigar(row["Name of Karigar 1"] ?? ""),
       dailyPiecesMade,
       totalProductionNum: currentTotal,
@@ -376,6 +385,7 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     cutPieces,
     loopCutPieces: loopPieces + cutPieces,
     fullPiecePieces,
+    fullPieceCutPieces: fullPiecePieces + cutPieces,
     grandTotalStoreReceiving,
     dailyTrend,
     weeklyTrend,

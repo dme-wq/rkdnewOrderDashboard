@@ -8,12 +8,8 @@ import {
   Calendar,
   CalendarDays,
   BarChart3,
-  Layers,
-  Scissors,
   Award,
-  Package,
-  Sparkles,
-  GitMerge,
+  Layers,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { AggregatedStats } from "@/lib/types";
@@ -27,8 +23,8 @@ interface TopbarProps {
   stats: AggregatedStats | null;
 }
 
-// ── Animated count-up / count-down hook ─────────────────────────────────────
-function useCountUp(target: number, duration = 700) {
+// ── Animated count-up hook ──────────────────────────────────────────────────
+function useCountUp(target: number, duration = 650) {
   const [value, setValue] = useState(0);
   const prevRef = useRef(0);
   const rafRef = useRef<number | null>(null);
@@ -57,252 +53,125 @@ function useCountUp(target: number, duration = 700) {
   return value;
 }
 
-// ── Single glowing circle chip ───────────────────────────────────────────────
-interface ChipDef {
+// ── Professional Executive Stat Card ─────────────────────────────────────────
+interface ProCardDef {
   label: string;
-  sublabel?: string;
   value: number;
   Icon: React.ComponentType<{ size?: number }>;
-  gradient: string;
-  glow: string;
-  size?: number;
 }
 
-function StatChip({ label, sublabel, value, Icon, gradient, glow, size = 92 }: ChipDef) {
+function ProfessionalScorecard({ label, value, Icon }: ProCardDef) {
   const display = useCountUp(value);
-  const isCompact = size < 85;
 
   return (
     <div
-      className="stat-chip-rainbow"
+      className="pro-stat-card"
       style={{
-        background: gradient,
-        borderRadius: "50%",
-        width: size,
-        height: size,
+        flex: "1 1 0",
+        minWidth: 155,
+        maxWidth: 220,
+        height: 76,
+        padding: "10px 14px",
+        borderRadius: 12,
+        background: "var(--bg-card)",
+        border: "1.5px solid var(--border)",
+        boxShadow: "var(--shadow-sm)",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#fff",
+        justifyContent: "space-between",
         cursor: "default",
         position: "relative",
         overflow: "hidden",
-        flexShrink: 0,
-        transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease",
-        gap: isCompact ? 1 : 2,
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.transform = "scale(1.11)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.transform = "scale(1)";
       }}
     >
-      {/* Inner shine */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "50%",
-          background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 55%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Inner white ring for depth */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 3.5,
-          borderRadius: "50%",
-          border: "1.5px solid rgba(255,255,255,0.24)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Icon bubble */}
-      <div
-        style={{
-          width: isCompact ? 20 : 22,
-          height: isCompact ? 20 : 22,
-          borderRadius: "50%",
-          background: "rgba(255,255,255,0.25)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1,
-          flexShrink: 0,
-        }}
-      >
-        <Icon size={isCompact ? 11 : 12} />
-      </div>
-
-      {/* Number — animated */}
-      <div
-        style={{
-          fontSize: isCompact ? 16 : 20,
-          fontWeight: 900,
-          letterSpacing: "-0.04em",
-          lineHeight: 1,
-          fontVariantNumeric: "tabular-nums",
-          zIndex: 1,
-        }}
-      >
-        {display.toLocaleString()}
-      </div>
-
-      {/* Label */}
-      <span
-        style={{
-          fontSize: isCompact ? 7 : 8,
-          fontWeight: 800,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          opacity: 0.9,
-          lineHeight: 1,
-          zIndex: 1,
-          whiteSpace: "nowrap",
-        }}
-      >
-        {label}
-      </span>
-
-      {/* Sublabel if present */}
-      {sublabel && (
+      {/* Top Header: Label + Icon */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
         <span
           style={{
-            fontSize: isCompact ? 5.5 : 6.5,
-            fontWeight: 600,
+            fontSize: 10.5,
+            fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: "0.05em",
-            opacity: 0.72,
-            lineHeight: 1,
-            zIndex: 1,
+            color: "var(--text-secondary)",
             whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
-          {sublabel}
+          {label}
         </span>
-      )}
+        <div
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 6,
+            background: "rgba(99, 102, 241, 0.10)",
+            color: "#6366f1",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Icon size={12} />
+        </div>
+      </div>
+
+      {/* Bottom Value: Big Number + Pcs suffix */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+        <span
+          style={{
+            fontSize: 22,
+            fontWeight: 800,
+            color: "var(--text-primary)",
+            lineHeight: 1,
+            letterSpacing: "-0.03em",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {display.toLocaleString()}
+        </span>
+        <span
+          style={{
+            fontSize: 10.5,
+            fontWeight: 600,
+            color: "var(--text-muted)",
+            textTransform: "uppercase",
+          }}
+        >
+          pcs
+        </span>
+      </div>
     </div>
   );
 }
 
-function SkeletonChip({
-  gradient,
-  glow,
-  size = 92,
-}: {
-  gradient: string;
-  glow: string;
-  size?: number;
-}) {
+function SkeletonCard() {
   return (
     <div
       style={{
-        background: gradient,
-        boxShadow: `0 0 10px ${glow}`,
-        borderRadius: "50%",
-        width: size,
-        height: size,
+        flex: "1 1 0",
+        minWidth: 155,
+        maxWidth: 220,
+        height: 76,
+        padding: "10px 14px",
+        borderRadius: 12,
+        background: "var(--bg-card)",
+        border: "1.5px solid var(--border)",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 4,
-        opacity: 0.4,
-        flexShrink: 0,
+        justifyContent: "space-between",
+        opacity: 0.5,
       }}
     >
-      <div
-        style={{ width: 20, height: 20, background: "rgba(255,255,255,0.25)", borderRadius: "50%" }}
-      />
-      <div
-        style={{ height: 6, width: "50%", background: "rgba(255,255,255,0.22)", borderRadius: 3 }}
-      />
-      <div
-        style={{ height: 14, width: "40%", background: "rgba(255,255,255,0.30)", borderRadius: 3 }}
-      />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ height: 10, width: "60%", background: "var(--border)", borderRadius: 4 }} />
+        <div style={{ width: 22, height: 22, background: "var(--border)", borderRadius: 6 }} />
+      </div>
+      <div style={{ height: 20, width: "45%", background: "var(--border)", borderRadius: 4 }} />
     </div>
   );
 }
-
-// ── Chip Configurations ───────────────────────────────────────────────────────
-
-// Store Receiving chips (Column K: Loop, Cut, Full Piece, Loop + Cut & Grand Total from Column Y)
-const RESPONSIBILITY_CHIPS = [
-  {
-    label: "Grand Total",
-    sublabel: "All Resp.",
-    key: "grandTotalStoreReceiving" as const,
-    Icon: Award,
-    gradient: "linear-gradient(140deg,#064e3b,#059669,#10b981)",
-    glow: "rgba(16,185,129,0.55)",
-  },
-  {
-    label: "Loop",
-    sublabel: "Store Recv",
-    key: "loopPieces" as const,
-    Icon: RefreshCw,
-    gradient: "linear-gradient(140deg,#1e3a8a,#2563eb,#3b82f6)",
-    glow: "rgba(59,130,246,0.55)",
-  },
-  {
-    label: "Cut",
-    sublabel: "Store Recv",
-    key: "cutPieces" as const,
-    Icon: Scissors,
-    gradient: "linear-gradient(140deg,#581c87,#7c3aed,#9333ea)",
-    glow: "rgba(147,51,234,0.55)",
-  },
-  {
-    label: "Loop + Cut",
-    sublabel: "Combined",
-    key: "loopCutPieces" as const,
-    Icon: GitMerge,
-    gradient: "linear-gradient(140deg,#0284c7,#4f46e5,#7c3aed)",
-    glow: "rgba(99,102,241,0.55)",
-  },
-  {
-    label: "Full Piece",
-    sublabel: "Store Recv",
-    key: "fullPiecePieces" as const,
-    Icon: Layers,
-    gradient: "linear-gradient(140deg,#881337,#e11d48,#f43f5e)",
-    glow: "rgba(244,63,94,0.55)",
-  },
-];
-
-// Production Trend chips
-const PERIOD_CHIPS = [
-  {
-    label: "Today",
-    sublabel: "Production",
-    key: "todayPieces" as const,
-    Icon: Calendar,
-    gradient: "linear-gradient(140deg,#312e81,#4f46e5,#6366f1)",
-    glow: "rgba(99,102,241,0.50)",
-  },
-  {
-    label: "This Week",
-    sublabel: "Production",
-    key: "thisWeekPieces" as const,
-    Icon: CalendarDays,
-    gradient: "linear-gradient(140deg,#4c1d95,#6d28d9,#8b5cf6)",
-    glow: "rgba(139,92,246,0.50)",
-  },
-  {
-    label: "Month",
-    sublabel: "Production",
-    key: "thisMonthPieces" as const,
-    Icon: Layers,
-    gradient: "linear-gradient(140deg,#9f1239,#be123c,#e11d48)",
-    glow: "rgba(225,29,72,0.50)",
-  },
-];
-
-type TopbarViewMode = "receiving" | "production" | "all";
 
 export function Topbar({
   lastUpdated,
@@ -315,7 +184,6 @@ export function Topbar({
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [secondsAgo, setSecondsAgo] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<TopbarViewMode>("receiving");
 
   useEffect(() => setMounted(true), []);
 
@@ -342,29 +210,58 @@ export function Topbar({
 
   const isBackgroundFetching = isFetching && !isLoading;
 
-  const currentChips =
-    viewMode === "receiving"
-      ? RESPONSIBILITY_CHIPS
-      : viewMode === "production"
-        ? PERIOD_CHIPS
-        : [...RESPONSIBILITY_CHIPS, ...PERIOD_CHIPS];
-
-  const chipSize = viewMode === "all" ? 72 : 86;
+  // The 5 Main Scorecards explicitly requested by the user:
+  // 1. Today Total
+  // 2. Yesterday Total
+  // 3. Weekly Total
+  // 4. Grand Total
+  // 5. Full Piece + Cut
+  const mainCards: ProCardDef[] = [
+    {
+      label: "Today Total",
+      value: stats?.todayPieces ?? 0,
+      Icon: Calendar,
+    },
+    {
+      label: "Yesterday Total",
+      value: stats?.yesterdayPieces ?? 0,
+      Icon: CalendarDays,
+    },
+    {
+      label: "Weekly Total",
+      value: stats?.thisWeekPieces ?? 0,
+      Icon: BarChart3,
+    },
+    {
+      label: "Grand Total",
+      value: stats?.grandTotalStoreReceiving ?? 0,
+      Icon: Award,
+    },
+    {
+      label: "Full Piece + Cut",
+      value: stats ? stats.fullPiecePieces + stats.cutPieces : 0,
+      Icon: Layers,
+    },
+  ];
 
   return (
     <div
       className="topbar"
       style={{
-        minHeight: 104,
+        minHeight: 90,
         paddingLeft: 20,
         paddingRight: 20,
-        paddingTop: 8,
-        paddingBottom: 8,
+        paddingTop: 10,
+        paddingBottom: 10,
+        display: "flex",
         alignItems: "center",
+        gap: 16,
+        background: "var(--bg-elevated)",
+        borderBottom: "1px solid var(--border)",
       }}
     >
-      {/* LEFT: Logo */}
-      <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+      {/* LEFT: Logo & Brand */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
         <div
           style={{
             width: 44,
@@ -389,149 +286,39 @@ export function Topbar({
         </div>
       </div>
 
-      {/* CENTER: View selector & Stat chips */}
+      {/* CENTER: 5 Professional Main Scorecards */}
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
-          gap: 6,
+          gap: 10,
           flex: 1,
-          padding: "0 10px",
+          justifyContent: "center",
+          flexWrap: "nowrap",
+          overflowX: "auto",
         }}
       >
-        {/* Sleek Segmented Switcher */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            background: "var(--bg-elevated)",
-            border: "1px solid var(--border)",
-            borderRadius: 99,
-            padding: 2,
-            gap: 2,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-          }}
-        >
-          <button
-            id="topbar-view-receiving"
-            onClick={() => setViewMode("receiving")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              padding: "3px 10px",
-              borderRadius: 99,
-              border: "none",
-              cursor: "pointer",
-              fontSize: 11,
-              fontWeight: 700,
-              fontFamily: "Inter, sans-serif",
-              letterSpacing: "-0.01em",
-              transition: "all 0.15s ease",
-              background:
-                viewMode === "receiving"
-                  ? "linear-gradient(135deg,#059669,#10b981)"
-                  : "transparent",
-              color: viewMode === "receiving" ? "#fff" : "var(--text-secondary)",
-              boxShadow:
-                viewMode === "receiving" ? "0 2px 6px rgba(16,185,129,0.35)" : "none",
-            }}
-          >
-            <Package size={11} /> Store Receiving (Responsibility)
-          </button>
-          <button
-            id="topbar-view-production"
-            onClick={() => setViewMode("production")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              padding: "3px 10px",
-              borderRadius: 99,
-              border: "none",
-              cursor: "pointer",
-              fontSize: 11,
-              fontWeight: 700,
-              fontFamily: "Inter, sans-serif",
-              letterSpacing: "-0.01em",
-              transition: "all 0.15s ease",
-              background:
-                viewMode === "production"
-                  ? "linear-gradient(135deg,#4f46e5,#6366f1)"
-                  : "transparent",
-              color: viewMode === "production" ? "#fff" : "var(--text-secondary)",
-              boxShadow:
-                viewMode === "production" ? "0 2px 6px rgba(99,102,241,0.35)" : "none",
-            }}
-          >
-            <Calendar size={11} /> Production Trends
-          </button>
-          <button
-            id="topbar-view-all"
-            onClick={() => setViewMode("all")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              padding: "3px 10px",
-              borderRadius: 99,
-              border: "none",
-              cursor: "pointer",
-              fontSize: 11,
-              fontWeight: 700,
-              fontFamily: "Inter, sans-serif",
-              letterSpacing: "-0.01em",
-              transition: "all 0.15s ease",
-              background:
-                viewMode === "all" ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "transparent",
-              color: viewMode === "all" ? "#fff" : "var(--text-secondary)",
-              boxShadow: viewMode === "all" ? "0 2px 6px rgba(168,85,247,0.35)" : "none",
-            }}
-          >
-            <Sparkles size={11} /> All (8)
-          </button>
-        </div>
-
-        {/* Chips row */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: viewMode === "all" ? 8 : 12,
-            justifyContent: "center",
-            flexWrap: "nowrap",
-          }}
-        >
-          {isLoading
-            ? currentChips.map((c, i) => (
-                <SkeletonChip key={i} gradient={c.gradient} glow={c.glow} size={chipSize} />
-              ))
-            : currentChips.map((c) => (
-                <StatChip
-                  key={c.label}
-                  label={c.label}
-                  sublabel={c.sublabel}
-                  value={stats ? stats[c.key] : 0}
-                  Icon={c.Icon}
-                  gradient={c.gradient}
-                  glow={c.glow}
-                  size={chipSize}
-                />
-              ))}
-        </div>
+        {isLoading
+          ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+          : mainCards.map((card) => (
+              <ProfessionalScorecard
+                key={card.label}
+                label={card.label}
+                value={card.value}
+                Icon={card.Icon}
+              />
+            ))}
       </div>
 
       {/* RIGHT: Sync badge + action buttons */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
         {syncLabel && (
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 5,
-              padding: "4px 10px",
+              padding: "5px 11px",
               borderRadius: 99,
               fontSize: 11.5,
               fontWeight: 600,

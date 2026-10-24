@@ -95,6 +95,7 @@ export interface AggregatedStats {
   cutPieces: number;
   loopCutPieces: number;
   fullPiecePieces: number;
+  fullPieceCutPieces: number;
   grandTotalStoreReceiving: number;
   dailyTrend: DailyProduction[]; // last 14 days
   weeklyTrend: WeeklyProduction[]; // last 8 weeks
