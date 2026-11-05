@@ -1,7 +1,7 @@
 "use client";
 
 import { ProcessedRow, ActiveFilters, DatePreset } from "@/lib/types";
-import { exportToCSV, getDateRangeForPreset } from "@/lib/transform";
+import { exportToCSV, getDateRangeForPreset, safeParseDate } from "@/lib/transform";
 import {
   Search, Download, ChevronUp, ChevronDown, ChevronsUpDown,
   ChevronLeft, ChevronRight, PackageOpen, Check, CalendarRange,
@@ -487,6 +487,65 @@ function MultiSelectDropdown({
   );
 }
 
+// Helper to filter allRows by active date range and cross-filters except one field (for dynamic dependent dropdowns)
+function getContextRows(
+  allRows: ProcessedRow[],
+  filters: ActiveFilters,
+  exceptField?: "po" | "design" | "color" | "karigar" | "responsibility"
+): ProcessedRow[] {
+  let fromDate: Date | null = null;
+  let toDate: Date | null = null;
+
+  if (filters.dateFrom && filters.dateTo) {
+    fromDate = safeParseDate(filters.dateFrom);
+    toDate = safeParseDate(filters.dateTo);
+  }
+
+  return allRows.filter((row) => {
+    // 1. Date range check
+    if (fromDate && toDate) {
+      const rowDate = safeParseDate(row.Date);
+      if (!rowDate) return false;
+      const t = rowDate.getTime();
+      const f = fromDate.getTime();
+      const e = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999).getTime();
+      if (t < f || t > e) return false;
+    }
+
+    // 2. PO Numbers check
+    if (exceptField !== "po" && filters.poNumbers.length > 0) {
+      const po = row["Buyer PO Number"]?.trim();
+      if (!po || !filters.poNumbers.includes(po)) return false;
+    }
+
+    // 3. Design check
+    if (exceptField !== "design" && filters.designNames.length > 0) {
+      const des = row["Design Name"]?.trim();
+      if (!des || !filters.designNames.includes(des)) return false;
+    }
+
+    // 4. Color check
+    if (exceptField !== "color" && filters.yarnColors.length > 0) {
+      const col = row["Yarn Color"]?.trim();
+      if (!col || !filters.yarnColors.includes(col)) return false;
+    }
+
+    // 5. Karigar check
+    if (exceptField !== "karigar" && filters.karigarNames.length > 0) {
+      const name = row.karigarInfo?.name;
+      if (!name || !filters.karigarNames.includes(name)) return false;
+    }
+
+    // 6. Responsibility check
+    if (exceptField !== "responsibility" && filters.responsibilities && filters.responsibilities.length > 0) {
+      const resp = (row.Responsibility || "").trim();
+      if (!resp || !filters.responsibilities.includes(resp)) return false;
+    }
+
+    return true;
+  });
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoading }: ProductionTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("Date");
@@ -498,20 +557,14 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
   const [showCustomDate, setShowCustomDate] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
-  // Unique filter options
-  const poOptions = useMemo(() => [...new Set(allRows.map(r => r["Buyer PO Number"]).filter(Boolean))].sort(), [allRows]);
-  const designOptions = useMemo(() => [...new Set(allRows.map(r => r["Design Name"]).filter(Boolean))].sort(), [allRows]);
-  const colorOptions = useMemo(() => [...new Set(allRows.map(r => r["Yarn Color"]).filter(Boolean).filter(c => c !== "-"))].sort(), [allRows]);
-  const karigarOptions = useMemo(() => [...new Set(allRows.map(r => r.karigarInfo.name).filter(Boolean))].sort(), [allRows]);
-  const responsibilityOptions = useMemo(() =>
-    [...new Set(allRows.map(r => (r.Responsibility || "").trim()).filter(Boolean))].sort(),
-    [allRows]
+  // ── Dynamic & Dependent options and totals (updates based on active date range and cross-filters) ──
+  const poContextRows = useMemo(
+    () => getContextRows(allRows, filters, "po"),
+    [allRows, filters]
   );
-
-  // Totals for each filter dropdown option (piece volume & record count)
   const poTotals = useMemo(() => {
     const map: Record<string, { pieces: number; count: number }> = {};
-    for (const r of allRows) {
+    for (const r of poContextRows) {
       const k = r["Buyer PO Number"]?.trim();
       if (!k) continue;
       if (!map[k]) map[k] = { pieces: 0, count: 0 };
@@ -519,11 +572,24 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       map[k].count += 1;
     }
     return map;
-  }, [allRows]);
+  }, [poContextRows]);
+  const poOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of poContextRows) {
+      const k = r["Buyer PO Number"]?.trim();
+      if (k) set.add(k);
+    }
+    for (const s of filters.poNumbers) set.add(s);
+    return Array.from(set).sort();
+  }, [poContextRows, filters.poNumbers]);
 
+  const designContextRows = useMemo(
+    () => getContextRows(allRows, filters, "design"),
+    [allRows, filters]
+  );
   const designTotals = useMemo(() => {
     const map: Record<string, { pieces: number; count: number }> = {};
-    for (const r of allRows) {
+    for (const r of designContextRows) {
       const k = r["Design Name"]?.trim();
       if (!k) continue;
       if (!map[k]) map[k] = { pieces: 0, count: 0 };
@@ -531,11 +597,24 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       map[k].count += 1;
     }
     return map;
-  }, [allRows]);
+  }, [designContextRows]);
+  const designOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of designContextRows) {
+      const k = r["Design Name"]?.trim();
+      if (k) set.add(k);
+    }
+    for (const s of filters.designNames) set.add(s);
+    return Array.from(set).sort();
+  }, [designContextRows, filters.designNames]);
 
+  const colorContextRows = useMemo(
+    () => getContextRows(allRows, filters, "color"),
+    [allRows, filters]
+  );
   const colorTotals = useMemo(() => {
     const map: Record<string, { pieces: number; count: number }> = {};
-    for (const r of allRows) {
+    for (const r of colorContextRows) {
       const k = r["Yarn Color"]?.trim();
       if (!k || k === "-") continue;
       if (!map[k]) map[k] = { pieces: 0, count: 0 };
@@ -543,11 +622,24 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       map[k].count += 1;
     }
     return map;
-  }, [allRows]);
+  }, [colorContextRows]);
+  const colorOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of colorContextRows) {
+      const k = r["Yarn Color"]?.trim();
+      if (k && k !== "-") set.add(k);
+    }
+    for (const s of filters.yarnColors) set.add(s);
+    return Array.from(set).sort();
+  }, [colorContextRows, filters.yarnColors]);
 
+  const karigarContextRows = useMemo(
+    () => getContextRows(allRows, filters, "karigar"),
+    [allRows, filters]
+  );
   const karigarTotals = useMemo(() => {
     const map: Record<string, { pieces: number; count: number }> = {};
-    for (const r of allRows) {
+    for (const r of karigarContextRows) {
       const k = r.karigarInfo?.name?.trim();
       if (!k) continue;
       if (!map[k]) map[k] = { pieces: 0, count: 0 };
@@ -555,11 +647,24 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       map[k].count += 1;
     }
     return map;
-  }, [allRows]);
+  }, [karigarContextRows]);
+  const karigarOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of karigarContextRows) {
+      const k = r.karigarInfo?.name?.trim();
+      if (k) set.add(k);
+    }
+    for (const s of filters.karigarNames) set.add(s);
+    return Array.from(set).sort();
+  }, [karigarContextRows, filters.karigarNames]);
 
+  const responsibilityContextRows = useMemo(
+    () => getContextRows(allRows, filters, "responsibility"),
+    [allRows, filters]
+  );
   const responsibilityTotals = useMemo(() => {
     const map: Record<string, { pieces: number; count: number }> = {};
-    for (const r of allRows) {
+    for (const r of responsibilityContextRows) {
       const k = (r.Responsibility || "").trim();
       if (!k) continue;
       if (!map[k]) map[k] = { pieces: 0, count: 0 };
@@ -567,7 +672,16 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
       map[k].count += 1;
     }
     return map;
-  }, [allRows]);
+  }, [responsibilityContextRows]);
+  const responsibilityOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of responsibilityContextRows) {
+      const k = (r.Responsibility || "").trim();
+      if (k) set.add(k);
+    }
+    for (const s of (filters.responsibilities || [])) set.add(s);
+    return Array.from(set).sort();
+  }, [responsibilityContextRows, filters.responsibilities]);
 
   const isFiltered =
     !!(filters.dateFrom || filters.poNumbers.length || filters.designNames.length ||

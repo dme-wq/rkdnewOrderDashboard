@@ -49,7 +49,7 @@ function safeParseNum(val: string | number | undefined): number {
   return isNaN(n) ? 0 : n;
 }
 
-function safeParseDate(dateStr: string): Date | null {
+export function safeParseDate(dateStr: string): Date | null {
   if (!dateStr) return null;
   // Try ISO format first: "yyyy-MM-dd" (e.g. from sheet raw values)
   const iso = parseISO(dateStr);
@@ -169,7 +169,10 @@ export function applyFilters(
     if (filters.dateFrom && filters.dateTo && rowDate) {
       const from = safeParseDate(filters.dateFrom);
       const to = safeParseDate(filters.dateTo);
-      if (from && to && !isWithinInterval(rowDate, { start: from, end: to })) return false;
+      if (from && to) {
+        const toEnd = new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59, 999);
+        if (!isWithinInterval(rowDate, { start: from, end: toEnd })) return false;
+      }
     }
 
     // PO Numbers
