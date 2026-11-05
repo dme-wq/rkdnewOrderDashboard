@@ -332,11 +332,11 @@ export function Topbar({
           />
         </div>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-            RKD Furnishings
+          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", lineHeight: 1.2, whiteSpace: "nowrap" }}>
+            RKD Furnishings Pvt Ltd
           </div>
-          <div style={{ fontSize: 9.5, color: "var(--text-muted)", fontWeight: 600 }}>
-            Production Dashboard
+          <div style={{ fontSize: 9.5, color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
+            Export New Order Analysis Dashboard
           </div>
         </div>
       </div>

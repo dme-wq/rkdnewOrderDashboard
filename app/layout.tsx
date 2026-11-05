@@ -3,9 +3,9 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "RKD New Order Dashboard",
+  title: "RKD Furnishings Pvt Ltd | Export New Order Analysis Dashboard",
   description:
-    "Live production tracker for RKD Furnishings Private Limited — Bathmat Tufting. Monitor karigar output daily, weekly, monthly, and quarterly.",
+    "Live production tracker for RKD Furnishings Pvt Ltd — Export New Order Analysis Dashboard.",
   keywords: ["karigar", "production", "bathmat", "tufting", "dashboard", "rkd", "furnishings"],
 };
 
