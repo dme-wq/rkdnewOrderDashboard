@@ -29,6 +29,48 @@ const BOT_PALETTE = [
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
+// Persona / character emojis deterministically mapped to karigar's name
+const PERSON_CHARACTERS = [
+  "🧑‍🏭", // artisan maker
+  "👨‍🔧", // master craftsman
+  "👷‍♂️", // skilled builder
+  "🧑‍🎨", // creator / tufter
+  "🧔",  // person with beard
+  "👳‍♂️", // person in turban
+  "🤠",  // skilled worker
+  "🧑‍💻", // precision worker
+  "👨‍💼", // pro operator
+  "🧑‍🦱", // friendly maker
+  "🦸‍♂️", // hero performer
+  "⚡",  // high speed
+  "🌟",  // star achiever
+  "🎯",  // target hitter
+  "🦁",  // lion strong
+  "🐯",  // tiger speed
+  "🦅",  // eagle sharp
+  "🚀",  // fast output
+  "💎",  // gem quality
+  "🦾",  // powerful maker
+  "🛠️",  // master artisan
+];
+
+function getKarigarEmoji(name: string, idx: number, isTop: boolean): string {
+  if (isTop) {
+    if (idx === 0) return "🥇";
+    if (idx === 1) return "🥈";
+    if (idx === 2) return "🥉";
+    if (idx === 3) return "⚡";
+    if (idx === 4) return "🌟";
+  }
+  // Deterministic mapping by name for Needs Attention and other ranks
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % PERSON_CHARACTERS.length;
+  return PERSON_CHARACTERS[index];
+}
+
 function SkeletonList() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -70,24 +112,23 @@ function KarigarRow({ stat, idx, maxPieces, palette, isTop }: KarigarRowProps) {
         borderBottom: "1px solid var(--border-light)",
       }}
     >
-      {/* Avatar */}
+      {/* Avatar with Persona / Emoji Character */}
       <div
         style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
+          width: 42,
+          height: 42,
+          borderRadius: 13,
           background: isTop ? c.bg : (c as typeof BOT_PALETTE[0]).bg,
           color: isTop ? "#fff" : c.text,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 13,
-          fontWeight: 800,
+          fontSize: 20,
           flexShrink: 0,
-          boxShadow: isTop ? "0 4px 12px rgba(0,0,0,0.15)" : "none",
+          boxShadow: isTop ? "0 4px 12px rgba(0,0,0,0.15)" : "0 2px 6px rgba(0,0,0,0.06)",
         }}
       >
-        {isTop && idx < 3 ? MEDALS[idx] : stat.initials}
+        {getKarigarEmoji(stat.name, idx, isTop)}
       </div>
 
       {/* Name + bar + meta */}

@@ -10,6 +10,8 @@ import {
   BarChart3,
   Award,
   Layers,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { AggregatedStats } from "@/lib/types";
@@ -210,6 +212,8 @@ export function Topbar({
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [secondsAgo, setSecondsAgo] = useState<number | null>(null);
+  // Auto-hide scorecards by default as requested; user can toggle anytime
+  const [showScorecards, setShowScorecards] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
@@ -236,12 +240,6 @@ export function Topbar({
 
   const isBackgroundFetching = isFetching && !isLoading;
 
-  // The 5 Main Scorecards explicitly requested by the user:
-  // 1. Today Total
-  // 2. Yesterday Total
-  // 3. Weekly Total
-  // 4. Grand Total
-  // 5. Full Piece + Cut
   const mainCards: ProCardDef[] = [
     {
       label: "Today Total",
@@ -274,29 +272,30 @@ export function Topbar({
     <div
       className="topbar"
       style={{
-        minHeight: 90,
+        minHeight: showScorecards ? 86 : 58,
         paddingLeft: 20,
         paddingRight: 20,
-        paddingTop: 10,
-        paddingBottom: 10,
+        paddingTop: 8,
+        paddingBottom: 8,
         display: "flex",
         alignItems: "center",
         gap: 16,
         background: "var(--bg-elevated)",
         borderBottom: "1px solid var(--border)",
+        transition: "min-height 0.22s ease",
       }}
     >
       {/* LEFT: Logo & Brand */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 11, flexShrink: 0 }}>
         <div
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
+            width: 38,
+            height: 38,
+            borderRadius: 10,
             background: "#fff",
             padding: 2,
             border: "1px solid var(--border)",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -310,9 +309,17 @@ export function Topbar({
             style={{ objectFit: "contain", width: "100%", height: "100%" }}
           />
         </div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+            RKD Furnishings
+          </div>
+          <div style={{ fontSize: 9.5, color: "var(--text-muted)", fontWeight: 600 }}>
+            Production Dashboard
+          </div>
+        </div>
       </div>
 
-      {/* CENTER: 5 Professional Main Scorecards */}
+      {/* CENTER: Scorecard Toggle Button or Expanded Scorecards */}
       <div
         style={{
           display: "flex",
@@ -324,16 +331,93 @@ export function Topbar({
           overflowX: "auto",
         }}
       >
-        {isLoading
-          ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-          : mainCards.map((card) => (
-              <ProfessionalScorecard
-                key={card.label}
-                label={card.label}
-                value={card.value}
-                Icon={card.Icon}
-              />
-            ))}
+        {!showScorecards ? (
+          <button
+            id="btn-show-scorecards"
+            onClick={() => setShowScorecards(true)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "7px 18px",
+              borderRadius: 99,
+              background: "rgba(99, 102, 241, 0.08)",
+              border: "1.5px solid rgba(99, 102, 241, 0.28)",
+              color: "#6366f1",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              fontFamily: "Inter, sans-serif",
+              boxShadow: "0 2px 8px rgba(99,102,241,0.12)",
+              transition: "all 0.18s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(99, 102, 241, 0.14)";
+              e.currentTarget.style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(99, 102, 241, 0.08)";
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            <BarChart3 size={14} />
+            <span>View Scorecards</span>
+            <span
+              style={{
+                background: "#6366f1",
+                color: "#fff",
+                borderRadius: 99,
+                padding: "1px 7px",
+                fontSize: 10.5,
+                fontWeight: 800,
+                lineHeight: "14px",
+              }}
+            >
+              5
+            </span>
+            <ChevronDown size={13} />
+          </button>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, overflowX: "auto" }}>
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+              : mainCards.map((card) => (
+                  <ProfessionalScorecard
+                    key={card.label}
+                    label={card.label}
+                    value={card.value}
+                    Icon={card.Icon}
+                  />
+                ))}
+            {/* Collapse Button */}
+            <button
+              id="btn-hide-scorecards"
+              onClick={() => setShowScorecards(false)}
+              title="Hide Scorecards"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "6px 11px",
+                borderRadius: 9,
+                background: "var(--bg-card)",
+                border: "1.5px solid var(--border)",
+                color: "var(--text-secondary)",
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: "pointer",
+                flexShrink: 0,
+                fontFamily: "Inter, sans-serif",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#6366f1")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+            >
+              <ChevronUp size={13} />
+              <span>Hide</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* RIGHT: Sync badge + action buttons */}

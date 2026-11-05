@@ -163,11 +163,8 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* ── Charts — GLOBAL (independent of table filters) ── */}
-          <ChartsRow stats={globalStats} isLoading={isLoading} />
-
           {/* ── Karigar Rankings — GLOBAL ── */}
-          <div style={{ marginTop: 20 }}>
+          <div style={{ marginTop: 4 }}>
             <KarigarRanking
               leaderboard={globalStats?.karigarLeaderboard ?? []}
               leaderboardThisWeek={globalStats?.karigarLeaderboardThisWeek ?? []}
@@ -204,6 +201,11 @@ export default function DashboardPage() {
               onFiltersChange={setFilters}
               isLoading={isLoading}
             />
+          </div>
+
+          {/* ── Charts — GLOBAL moved to bottom ── */}
+          <div style={{ marginTop: 24 }}>
+            <ChartsRow stats={globalStats} isLoading={isLoading} />
           </div>
 
           <div style={{ height: 32 }} />

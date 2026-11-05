@@ -27,62 +27,106 @@ interface TableMiniStatsProps {
   hasFilter: boolean;
 }
 
-const MINI_CARDS_CONFIG = [
+interface MiniCardConfig {
+  id: string;
+  label: string;
+  unit: string;
+  icon: React.ElementType;
+  valueKey: "grandTotal" | "loop" | "cut" | "loopCut" | "fullPiece" | "fullPieceCut" | "karigars" | "records";
+  color: string;
+  gradient: string;
+  iconBg: string;
+  border: string;
+}
+
+const MINI_CARDS_CONFIG: MiniCardConfig[] = [
   {
     id: "mini-stat-grand-total",
     label: "Grand Total",
     unit: "pcs",
     icon: Award,
-    valueKey: "grandTotal" as const,
+    valueKey: "grandTotal",
+    color: "#059669",
+    gradient: "linear-gradient(135deg, #059669, #10b981)",
+    iconBg: "rgba(16, 185, 129, 0.15)",
+    border: "rgba(16, 185, 129, 0.30)",
   },
   {
     id: "mini-stat-loop",
     label: "Loop",
     unit: "pcs",
     icon: RefreshCw,
-    valueKey: "loop" as const,
+    valueKey: "loop",
+    color: "#4f46e5",
+    gradient: "linear-gradient(135deg, #4338ca, #6366f1)",
+    iconBg: "rgba(99, 102, 241, 0.15)",
+    border: "rgba(99, 102, 241, 0.30)",
   },
   {
     id: "mini-stat-cut",
     label: "Cut",
     unit: "pcs",
     icon: Scissors,
-    valueKey: "cut" as const,
+    valueKey: "cut",
+    color: "#e11d48",
+    gradient: "linear-gradient(135deg, #be123c, #f43f5e)",
+    iconBg: "rgba(225, 29, 72, 0.15)",
+    border: "rgba(225, 29, 72, 0.30)",
   },
   {
     id: "mini-stat-loop-cut",
     label: "Loop + Cut",
     unit: "pcs",
     icon: GitMerge,
-    valueKey: "loopCut" as const,
+    valueKey: "loopCut",
+    color: "#7c3aed",
+    gradient: "linear-gradient(135deg, #6d28d9, #8b5cf6)",
+    iconBg: "rgba(124, 58, 237, 0.15)",
+    border: "rgba(124, 58, 237, 0.30)",
   },
   {
     id: "mini-stat-full-piece",
     label: "Full Piece",
     unit: "pcs",
     icon: Layers,
-    valueKey: "fullPiece" as const,
+    valueKey: "fullPiece",
+    color: "#2563eb",
+    gradient: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
+    iconBg: "rgba(37, 99, 235, 0.15)",
+    border: "rgba(37, 99, 235, 0.30)",
   },
   {
     id: "mini-stat-full-piece-cut",
     label: "Full Piece + Cut",
     unit: "pcs",
     icon: Sparkles,
-    valueKey: "fullPieceCut" as const,
+    valueKey: "fullPieceCut",
+    color: "#d97706",
+    gradient: "linear-gradient(135deg, #b45309, #f59e0b)",
+    iconBg: "rgba(217, 119, 6, 0.15)",
+    border: "rgba(217, 119, 6, 0.30)",
   },
   {
     id: "mini-stat-karigars",
     label: "Karigars",
     unit: "active",
     icon: Users,
-    valueKey: "karigars" as const,
+    valueKey: "karigars",
+    color: "#0891b2",
+    gradient: "linear-gradient(135deg, #0e7490, #06b6d4)",
+    iconBg: "rgba(8, 145, 178, 0.15)",
+    border: "rgba(8, 145, 178, 0.30)",
   },
   {
     id: "mini-stat-records",
     label: "Records",
     unit: "total",
     icon: FileText,
-    valueKey: "records" as const,
+    valueKey: "records",
+    color: "#c026d3",
+    gradient: "linear-gradient(135deg, #a21caf, #e879f9)",
+    iconBg: "rgba(192, 38, 211, 0.15)",
+    border: "rgba(192, 38, 211, 0.30)",
   },
 ];
 
@@ -121,12 +165,14 @@ function MiniScorecard({
   unit,
   value,
   Icon,
+  config,
 }: {
   id: string;
   label: string;
   unit: string;
   value: number;
   Icon: React.ElementType;
+  config: MiniCardConfig;
 }) {
   const display = useCountUp(value);
 
@@ -136,108 +182,133 @@ function MiniScorecard({
       className="pro-stat-card"
       style={{
         flex: "1 1 0",
-        minWidth: 110,
-        height: 66,
-        padding: "7px 10px",
-        borderRadius: 12,
-        background: "var(--bg-elevated)",
-        border: "1.5px solid var(--border)",
+        minWidth: 95,
+        maxWidth: 130,
+        height: 58,
+        padding: "0",
+        borderRadius: 10,
+        background: "var(--bg-card)",
+        border: `1.5px solid ${config.border}`,
         boxShadow: "var(--shadow-sm)",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
-        alignItems: "center",
         cursor: "default",
         overflow: "hidden",
+        position: "relative",
       }}
     >
-      {/* Top Header: Centered */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, width: "100%" }}>
-        <div
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: 5,
-            background: "rgba(99, 102, 241, 0.10)",
-            color: "#6366f1",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Icon size={10} />
-        </div>
-        <span
-          style={{
-            fontSize: 9.5,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-            color: "var(--text-secondary)",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            textAlign: "center",
-          }}
-        >
-          {label}
-        </span>
-      </div>
+      {/* Top colorful accent strip */}
+      <div
+        style={{
+          height: 2.5,
+          background: config.gradient,
+          width: "100%",
+          flexShrink: 0,
+        }}
+      />
 
-      {/* Bottom Value: Centered */}
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 3, width: "100%" }}>
-        <span
-          style={{
-            fontSize: 18,
-            fontWeight: 800,
-            color: "var(--text-primary)",
-            lineHeight: 1,
-            letterSpacing: "-0.03em",
-            fontVariantNumeric: "tabular-nums",
-            textAlign: "center",
-          }}
-        >
-          {display.toLocaleString()}
-        </span>
-        <span
-          style={{
-            fontSize: 9,
-            fontWeight: 600,
-            color: "var(--text-muted)",
-            textTransform: "uppercase",
-          }}
-        >
-          {unit}
-        </span>
+      {/* Content */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "4px 6px 5px",
+          textAlign: "center",
+        }}
+      >
+        {/* Top Header: Centered Icon + Label */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, width: "100%" }}>
+          <div
+            style={{
+              width: 15,
+              height: 15,
+              borderRadius: 4,
+              background: config.iconBg,
+              color: config.color,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Icon size={9} />
+          </div>
+          <span
+            style={{
+              fontSize: 8.5,
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+              color: "var(--text-secondary)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              textAlign: "center",
+            }}
+          >
+            {label}
+          </span>
+        </div>
+
+        {/* Bottom Value: Centered Number with bold tabular typography */}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2.5, width: "100%" }}>
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 900,
+              color: "var(--text-primary)",
+              lineHeight: 1,
+              letterSpacing: "-0.035em",
+              fontVariantNumeric: "tabular-nums",
+              fontFamily: "'Inter', system-ui, sans-serif",
+              textAlign: "center",
+            }}
+          >
+            {display.toLocaleString()}
+          </span>
+          <span
+            style={{
+              fontSize: 8,
+              fontWeight: 800,
+              color: config.color,
+              textTransform: "uppercase",
+              letterSpacing: "0.03em",
+            }}
+          >
+            {unit}
+          </span>
+        </div>
       </div>
     </div>
   );
 }
 
-function SkeletonMiniCard() {
+function SkeletonMiniCard({ config }: { config: MiniCardConfig }) {
   return (
     <div
       style={{
         flex: "1 1 0",
-        minWidth: 110,
-        height: 66,
-        padding: "7px 10px",
-        borderRadius: 12,
-        background: "var(--bg-elevated)",
-        border: "1.5px solid var(--border)",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        alignItems: "center",
+        minWidth: 95,
+        maxWidth: 130,
+        height: 58,
+        borderRadius: 10,
+        background: "var(--bg-card)",
+        border: `1.5px solid var(--border)`,
+        overflow: "hidden",
         opacity: 0.5,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, width: "100%" }}>
-        <div style={{ width: 18, height: 18, background: "var(--border)", borderRadius: 5 }} />
-        <div style={{ height: 9, width: "50%", background: "var(--border)", borderRadius: 4 }} />
+      <div style={{ height: 2.5, background: config.gradient, width: "100%" }} />
+      <div style={{ padding: "4px 6px 5px", display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", height: "calc(100% - 2.5px)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, width: "100%" }}>
+          <div style={{ width: 15, height: 15, borderRadius: 4, background: config.iconBg }} />
+          <div className="skeleton" style={{ height: 7, width: "50%", borderRadius: 3 }} />
+        </div>
+        <div className="skeleton" style={{ height: 13, width: "45%", borderRadius: 3 }} />
       </div>
-      <div style={{ height: 16, width: "40%", background: "var(--border)", borderRadius: 4 }} />
     </div>
   );
 }
@@ -307,12 +378,12 @@ export function TableMiniStats({
         </div>
       </div>
 
-      {/* Center: 8 Professional Mini Scorecards */}
+      {/* Center: 8 Colorful Compact Mini Scorecards */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 10,
+          gap: 8,
           flex: 1,
           justifyContent: "center",
           overflowX: "auto",
@@ -321,7 +392,7 @@ export function TableMiniStats({
       >
         {MINI_CARDS_CONFIG.map((c) =>
           isLoading ? (
-            <SkeletonMiniCard key={c.id} />
+            <SkeletonMiniCard key={c.id} config={c} />
           ) : (
             <MiniScorecard
               key={c.id}
@@ -330,6 +401,7 @@ export function TableMiniStats({
               unit={c.unit}
               value={values[c.valueKey] ?? 0}
               Icon={c.icon}
+              config={c}
             />
           )
         )}
