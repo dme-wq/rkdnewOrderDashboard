@@ -97,20 +97,45 @@ function getKarigarPersonEmoji(name: string): string {
 function initials(name: string) {
   return name.split(" ").map(w => w[0] ?? "").join("").slice(0, 2).toUpperCase();
 }
+function parseRowDateTimestamp(d: string): number {
+  if (!d) return 0;
+  const parts = d.split("-");
+  if (parts.length === 3) {
+    const months: Record<string, number> = {
+      jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+      jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+    };
+    const day = parseInt(parts[0], 10);
+    const mStr = parts[1].toLowerCase().slice(0, 3);
+    const m = months[mStr];
+    let y = parseInt(parts[2], 10);
+    if (y < 100) y += 2000;
+    if (!isNaN(day) && m !== undefined && !isNaN(y)) {
+      return new Date(y, m, day).getTime();
+    }
+  }
+  const t = new Date(d).getTime();
+  return isNaN(t) ? 0 : t;
+}
+
 function formatDate(d: string) {
+  if (!d) return "—";
   const months: Record<string, string> = {
-    Jan:"Jan",Feb:"Feb",Mar:"Mar",Apr:"Apr",May:"May",Jun:"Jun",
-    Jul:"Jul",Aug:"Aug",Sep:"Sep",Oct:"Oct",Nov:"Nov",Dec:"Dec",
+    Jan: "Jan", Feb: "Feb", Mar: "Mar", Apr: "Apr", May: "May", Jun: "Jun",
+    Jul: "Jul", Aug: "Aug", Sep: "Sep", Oct: "Oct", Nov: "Nov", Dec: "Dec",
   };
   const parts = d.split("-");
   if (parts.length === 3) {
-    // dd-MMM-yyyy
-    if (isNaN(Number(parts[1]))) return `${parts[0]} ${months[parts[1]] ?? parts[1]}`;
-    // yyyy-MM-dd
-    const date = new Date(d);
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
-    }
+    const day = parts[0].padStart(2, "0");
+    const mKey = parts[1].slice(0, 3);
+    const m = months[mKey] ?? parts[1];
+    let yr = parts[2];
+    if (yr.length === 2) yr = `20${yr}`;
+    return `${day} ${m} ${yr}`;
+  }
+  const date = new Date(d);
+  if (!isNaN(date.getTime())) {
+    return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   }
   return d;
 }
@@ -140,13 +165,14 @@ function SortIcon({ dir }: { dir: SortDir }) {
 
 // ─── Searchable Multi-Select Dropdown ──────────────────────────────────────────
 function MultiSelectDropdown({
-  label, options, selected, onChange, icon: Icon,
+  label, options, selected, onChange, icon: Icon, counts,
 }: {
   label: string;
   options: string[];
   selected: string[];
   onChange: (v: string[]) => void;
   icon?: React.ElementType;
+  counts?: Record<string, { pieces: number; count: number }>;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -264,8 +290,8 @@ function MultiSelectDropdown({
           background: "var(--bg-card)",
           border: "1px solid var(--border)",
           borderRadius: 12,
-          minWidth: 230,
-          maxWidth: 320,
+          minWidth: 260,
+          maxWidth: 360,
           boxShadow: "0 14px 38px rgba(0,0,0,0.16), 0 4px 12px rgba(0,0,0,0.08)",
           backdropFilter: "blur(14px)",
           overflow: "hidden",
@@ -423,10 +449,33 @@ function MultiSelectDropdown({
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
+                        marginRight: 6,
                       }}
                     >
                       {opt}
                     </span>
+
+                    {/* Right side: Option total */}
+                    {counts && counts[opt] !== undefined && (
+                      <span
+                        title={`${counts[opt].count.toLocaleString()} records`}
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          color: isSelected ? "#4f46e5" : "var(--text-secondary)",
+                          background: isSelected ? "rgba(99,102,241,0.12)" : "var(--bg-elevated)",
+                          border: `1px solid ${isSelected ? "rgba(99,102,241,0.25)" : "var(--border)"}`,
+                          padding: "1px 6px",
+                          borderRadius: 6,
+                          fontVariantNumeric: "tabular-nums",
+                          letterSpacing: "-0.01em",
+                          flexShrink: 0,
+                          marginLeft: "auto",
+                        }}
+                      >
+                        {counts[opt].pieces.toLocaleString()} pcs
+                      </span>
+                    )}
                   </div>
                 );
               })
@@ -459,6 +508,67 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
     [allRows]
   );
 
+  // Totals for each filter dropdown option (piece volume & record count)
+  const poTotals = useMemo(() => {
+    const map: Record<string, { pieces: number; count: number }> = {};
+    for (const r of allRows) {
+      const k = r["Buyer PO Number"]?.trim();
+      if (!k) continue;
+      if (!map[k]) map[k] = { pieces: 0, count: 0 };
+      map[k].pieces += (r.storeReceivingPieces || r.dailyPiecesMade || 0);
+      map[k].count += 1;
+    }
+    return map;
+  }, [allRows]);
+
+  const designTotals = useMemo(() => {
+    const map: Record<string, { pieces: number; count: number }> = {};
+    for (const r of allRows) {
+      const k = r["Design Name"]?.trim();
+      if (!k) continue;
+      if (!map[k]) map[k] = { pieces: 0, count: 0 };
+      map[k].pieces += (r.storeReceivingPieces || r.dailyPiecesMade || 0);
+      map[k].count += 1;
+    }
+    return map;
+  }, [allRows]);
+
+  const colorTotals = useMemo(() => {
+    const map: Record<string, { pieces: number; count: number }> = {};
+    for (const r of allRows) {
+      const k = r["Yarn Color"]?.trim();
+      if (!k || k === "-") continue;
+      if (!map[k]) map[k] = { pieces: 0, count: 0 };
+      map[k].pieces += (r.storeReceivingPieces || r.dailyPiecesMade || 0);
+      map[k].count += 1;
+    }
+    return map;
+  }, [allRows]);
+
+  const karigarTotals = useMemo(() => {
+    const map: Record<string, { pieces: number; count: number }> = {};
+    for (const r of allRows) {
+      const k = r.karigarInfo?.name?.trim();
+      if (!k) continue;
+      if (!map[k]) map[k] = { pieces: 0, count: 0 };
+      map[k].pieces += (r.storeReceivingPieces || r.dailyPiecesMade || 0);
+      map[k].count += 1;
+    }
+    return map;
+  }, [allRows]);
+
+  const responsibilityTotals = useMemo(() => {
+    const map: Record<string, { pieces: number; count: number }> = {};
+    for (const r of allRows) {
+      const k = (r.Responsibility || "").trim();
+      if (!k) continue;
+      if (!map[k]) map[k] = { pieces: 0, count: 0 };
+      map[k].pieces += (r.storeReceivingPieces || r.dailyPiecesMade || 0);
+      map[k].count += 1;
+    }
+    return map;
+  }, [allRows]);
+
   const isFiltered =
     !!(filters.dateFrom || filters.poNumbers.length || filters.designNames.length ||
       filters.yarnColors.length || filters.karigarNames.length || filters.responsibilities?.length) || !!searchQuery;
@@ -477,10 +587,29 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
     );
   }, [rows, searchQuery]);
 
-  // Sort
+  // Sort: Chronological date sorting with newest entries first by default
   const sortedRows = useMemo(() => {
-    if (sortDir === "none") return searchedRows;
-    return [...searchedRows].sort((a, b) => {
+    const indexed = searchedRows.map((r, i) => ({ ...r, _origIdx: i }));
+
+    return indexed.sort((a, b) => {
+      // 1. Date sorting: real chronological timestamp comparison
+      if (sortKey === "Date") {
+        const ta = parseRowDateTimestamp(a.Date);
+        const tb = parseRowDateTimestamp(b.Date);
+        if (ta !== tb) {
+          return sortDir === "asc" ? ta - tb : tb - ta;
+        }
+        // When dates are equal: newest entries in file come first on desc
+        return sortDir === "asc" ? a._origIdx - b._origIdx : b._origIdx - a._origIdx;
+      }
+
+      if (sortDir === "none") {
+        const ta = parseRowDateTimestamp(a.Date);
+        const tb = parseRowDateTimestamp(b.Date);
+        if (ta !== tb) return tb - ta;
+        return b._origIdx - a._origIdx;
+      }
+
       let av: unknown = a[sortKey as keyof ProcessedRow];
       let bv: unknown = b[sortKey as keyof ProcessedRow];
       if (sortKey === "dailyPiecesMade" || sortKey === "totalProductionNum" || sortKey === "poProgress" || sortKey === "storeReceivingPieces") {
@@ -533,13 +662,15 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
     setPage(1);
   };
 
+  const tableFontFamily = "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+
   // Styles
   const thBase: React.CSSProperties = {
     padding: "11px 14px",
     fontSize: 12,
     fontWeight: 800,
     textTransform: "capitalize",
-    letterSpacing: "0.02em",
+    letterSpacing: "-0.01em",
     color: "var(--text-primary)",
     background: "var(--bg-elevated)",
     borderBottom: "1px solid var(--border)",
@@ -549,6 +680,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
     top: 0,
     zIndex: 10,
     textAlign: "center",
+    fontFamily: tableFontFamily,
   };
   const thSortable: React.CSSProperties = { ...thBase, cursor: "pointer" };
   const thRight: React.CSSProperties = { ...thBase, textAlign: "center" };
@@ -557,10 +689,13 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
   const tdBase: React.CSSProperties = {
     padding: "12px 14px",
     borderBottom: "1px solid var(--border-light)",
-    fontSize: 13,
+    fontSize: 12.5,
+    fontWeight: 500,
     color: "var(--text-primary)",
     verticalAlign: "middle",
     textAlign: "center",
+    fontFamily: tableFontFamily,
+    letterSpacing: "-0.01em",
   };
 
   const pageNums = useMemo(() => {
@@ -761,28 +896,28 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
           <div style={{ width: 1, height: 22, background: "var(--border)", flexShrink: 0 }} />
 
           {/* Column filters */}
-          <MultiSelectDropdown label="PO Number" options={poOptions} selected={filters.poNumbers}
+          <MultiSelectDropdown label="PO Number" options={poOptions} selected={filters.poNumbers} counts={poTotals}
             onChange={v => { onFiltersChange({ ...filters, poNumbers: v }); setPage(1); }} />
-          <MultiSelectDropdown label="Design" options={designOptions} selected={filters.designNames}
+          <MultiSelectDropdown label="Design" options={designOptions} selected={filters.designNames} counts={designTotals}
             onChange={v => { onFiltersChange({ ...filters, designNames: v }); setPage(1); }} />
-          <MultiSelectDropdown label="Color" options={colorOptions} selected={filters.yarnColors}
+          <MultiSelectDropdown label="Color" options={colorOptions} selected={filters.yarnColors} counts={colorTotals}
             onChange={v => { onFiltersChange({ ...filters, yarnColors: v }); setPage(1); }} />
-          <MultiSelectDropdown label="Karigar" options={karigarOptions} selected={filters.karigarNames}
+          <MultiSelectDropdown label="Karigar" options={karigarOptions} selected={filters.karigarNames} counts={karigarTotals}
             onChange={v => { onFiltersChange({ ...filters, karigarNames: v }); setPage(1); }} />
-          <MultiSelectDropdown label="Responsibility" options={responsibilityOptions} selected={filters.responsibilities || []}
+          <MultiSelectDropdown label="Responsibility" options={responsibilityOptions} selected={filters.responsibilities || []} counts={responsibilityTotals}
             onChange={v => { onFiltersChange({ ...filters, responsibilities: v }); setPage(1); }} />
         </div>
       </div>
 
       {/* ── Table ── */}
       <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "calc(100vh - 280px)" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1060 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1060, fontFamily: tableFontFamily }}>
 
           {/* Header */}
           <thead>
             <tr>
               <th style={{ ...thBase, width: 44, paddingLeft: 14, textAlign: "center" }}>#</th>
-              <th style={{ ...thSortable, width: 95 }} onClick={() => handleSort("Date")}>
+              <th style={{ ...thSortable, minWidth: 105, width: 110 }} onClick={() => handleSort("Date")}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   Date <SortIcon dir={sortKey === "Date" ? sortDir : "none"} />
                 </div>
@@ -888,8 +1023,8 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                   </td>
 
                   {/* Date */}
-                  <td style={{ ...tdBase, width: 90 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
+                  <td style={{ ...tdBase, minWidth: 105, width: 110 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
                       {formatDate(row.Date)}
                     </div>
                   </td>
