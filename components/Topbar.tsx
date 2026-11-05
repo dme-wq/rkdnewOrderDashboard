@@ -65,18 +65,18 @@ interface ProCardDef {
   gradient?: string;
 }
 
-// Card accent configs — one per scorecard
-const CARD_ACCENTS: Record<string, { color: string; bg: string; iconBg: string; border: string }> = {
-  "Today Total":     { color: "#6366f1", bg: "linear-gradient(135deg,#4f46e5,#6366f1)", iconBg: "rgba(99,102,241,0.14)", border: "rgba(99,102,241,0.25)" },
-  "Yesterday Total": { color: "#8b5cf6", bg: "linear-gradient(135deg,#7c3aed,#8b5cf6)", iconBg: "rgba(139,92,246,0.14)", border: "rgba(139,92,246,0.25)" },
-  "Weekly Total":    { color: "#0891b2", bg: "linear-gradient(135deg,#0e7490,#0891b2)", iconBg: "rgba(8,145,178,0.14)", border: "rgba(8,145,178,0.25)" },
-  "Grand Total":     { color: "#059669", bg: "linear-gradient(135deg,#047857,#059669)", iconBg: "rgba(5,150,105,0.14)", border: "rgba(5,150,105,0.25)" },
-  "Full Piece + Cut":{ color: "#d97706", bg: "linear-gradient(135deg,#b45309,#d97706)", iconBg: "rgba(217,119,6,0.14)",  border: "rgba(217,119,6,0.25)"  },
+// Card accent configs — one per scorecard (Google Search Console theme with signature underline)
+const CARD_ACCENTS: Record<string, { color: string; border: string }> = {
+  "Today Total":      { color: "#2563eb", border: "rgba(37,99,235,0.22)" },
+  "Yesterday Total":  { color: "#7c3aed", border: "rgba(124,58,237,0.22)" },
+  "Weekly Total":     { color: "#0891b2", border: "rgba(8,145,178,0.22)" },
+  "Grand Total":      { color: "#f59e0b", border: "rgba(245,158,11,0.25)" },
+  "Full Piece + Cut": { color: "#059669", border: "rgba(5,150,105,0.22)" },
 };
 
-function ProfessionalScorecard({ label, value, Icon }: ProCardDef) {
+function ProfessionalScorecard({ label, value }: ProCardDef) {
   const display = useCountUp(value);
-  const accent = CARD_ACCENTS[label] ?? { color: "#6366f1", bg: "linear-gradient(135deg,#4f46e5,#6366f1)", iconBg: "rgba(99,102,241,0.14)", border: "rgba(99,102,241,0.22)" };
+  const accent = CARD_ACCENTS[label] ?? { color: "#f59e0b", border: "rgba(245,158,11,0.25)" };
 
   return (
     <div
@@ -85,92 +85,83 @@ function ProfessionalScorecard({ label, value, Icon }: ProCardDef) {
         flex: "1 1 0",
         minWidth: 125,
         maxWidth: 165,
-        height: 70,
-        padding: "0",
-        borderRadius: 12,
+        height: 68,
+        padding: "8px 12px 8px 12px",
+        borderRadius: 10,
         background: "var(--bg-card)",
-        border: `1.5px solid ${accent.border}`,
-        boxShadow: `var(--shadow-sm), 0 0 0 0 ${accent.color}`,
-        display: "flex",
-        flexDirection: "column",
-        cursor: "default",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Accent top bar */}
-      <div style={{
-        height: 3,
-        background: accent.bg,
-        borderRadius: "12px 12px 0 0",
-        flexShrink: 0,
-      }} />
-
-      {/* Content */}
-      <div style={{
-        flex: 1,
+        border: "1.5px solid var(--border)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: "6px 8px 7px",
-        textAlign: "center",
-      }}>
-        {/* Top Header: Centered Label + Icon */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, width: "100%" }}>
-          <div style={{
-            width: 19,
-            height: 19,
-            borderRadius: 5,
-            background: accent.iconBg,
-            color: accent.color,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            border: `1px solid ${accent.border}`,
-          }}>
-            <Icon size={10} />
-          </div>
-          <span style={{
-            fontSize: 9.5,
+        cursor: "default",
+        position: "relative",
+        transition: "all 0.18s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = accent.color;
+        e.currentTarget.style.boxShadow = "0 3px 10px rgba(0,0,0,0.07)";
+        e.currentTarget.style.transform = "translateY(-1px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--border)";
+        e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      {/* Top section: Label + Signature Underline Accent Bar */}
+      <div>
+        <div
+          style={{
+            fontSize: 11,
             fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
             color: "var(--text-secondary)",
+            letterSpacing: "-0.01em",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
-            textAlign: "center",
-          }}>
-            {label}
-          </span>
+            lineHeight: 1.2,
+          }}
+        >
+          {label}
         </div>
+        <div
+          style={{
+            width: 26,
+            height: 3,
+            borderRadius: 99,
+            background: accent.color,
+            marginTop: 4,
+          }}
+        />
+      </div>
 
-        {/* Bottom Value: Centered */}
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 3, width: "100%" }}>
-          <span style={{
-            fontSize: 20,
-            fontWeight: 900,
+      {/* Bottom section: Bold, prominent tabular number */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 3.5 }}>
+        <span
+          style={{
+            fontSize: 21,
+            fontWeight: 800,
             color: "var(--text-primary)",
             lineHeight: 1,
-            letterSpacing: "-0.035em",
+            letterSpacing: "-0.03em",
             fontVariantNumeric: "tabular-nums",
-            fontFeatureSettings: '"tnum"',
-            textAlign: "center",
-          }}>
-            {display.toLocaleString()}
-          </span>
-          <span style={{
-            fontSize: 9,
+            fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+          }}
+        >
+          {display.toLocaleString()}
+        </span>
+        <span
+          style={{
+            fontSize: 9.5,
             fontWeight: 700,
-            color: accent.color,
+            color: "var(--text-muted)",
             textTransform: "uppercase",
             letterSpacing: "0.04em",
-            opacity: 0.85,
-          }}>
-            pcs
-          </span>
-        </div>
+          }}
+        >
+          pcs
+        </span>
       </div>
     </div>
   );
@@ -178,25 +169,27 @@ function ProfessionalScorecard({ label, value, Icon }: ProCardDef) {
 
 function SkeletonCard() {
   return (
-    <div style={{
-      flex: "1 1 0",
-      minWidth: 125,
-      maxWidth: 165,
-      height: 70,
-      borderRadius: 12,
-      background: "var(--bg-card)",
-      border: "1.5px solid var(--border)",
-      overflow: "hidden",
-      opacity: 0.6,
-    }}>
-      <div style={{ height: 3, background: "var(--border)" }} />
-      <div style={{ padding: "6px 8px 7px", display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", height: "calc(100% - 3px)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, width: "100%" }}>
-          <div className="skeleton" style={{ width: 19, height: 19, borderRadius: 5 }} />
-          <div className="skeleton" style={{ height: 9, width: "55%", borderRadius: 4 }} />
-        </div>
-        <div className="skeleton" style={{ height: 18, width: "42%", borderRadius: 4 }} />
+    <div
+      style={{
+        flex: "1 1 0",
+        minWidth: 125,
+        maxWidth: 165,
+        height: 68,
+        padding: "8px 12px 8px 12px",
+        borderRadius: 10,
+        background: "var(--bg-card)",
+        border: "1.5px solid var(--border)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        opacity: 0.6,
+      }}
+    >
+      <div>
+        <div className="skeleton" style={{ height: 11, width: "65%", borderRadius: 4 }} />
+        <div className="skeleton" style={{ height: 3, width: 26, borderRadius: 99, marginTop: 4 }} />
       </div>
+      <div className="skeleton" style={{ height: 21, width: "50%", borderRadius: 4 }} />
     </div>
   );
 }

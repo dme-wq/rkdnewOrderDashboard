@@ -34,9 +34,6 @@ interface MiniCardConfig {
   icon: React.ElementType;
   valueKey: "grandTotal" | "loop" | "cut" | "loopCut" | "fullPiece" | "fullPieceCut" | "karigars" | "records";
   color: string;
-  gradient: string;
-  iconBg: string;
-  border: string;
 }
 
 const MINI_CARDS_CONFIG: MiniCardConfig[] = [
@@ -46,10 +43,7 @@ const MINI_CARDS_CONFIG: MiniCardConfig[] = [
     unit: "pcs",
     icon: Award,
     valueKey: "grandTotal",
-    color: "#059669",
-    gradient: "linear-gradient(135deg, #059669, #10b981)",
-    iconBg: "rgba(16, 185, 129, 0.15)",
-    border: "rgba(16, 185, 129, 0.30)",
+    color: "#f59e0b",
   },
   {
     id: "mini-stat-loop",
@@ -58,9 +52,6 @@ const MINI_CARDS_CONFIG: MiniCardConfig[] = [
     icon: RefreshCw,
     valueKey: "loop",
     color: "#4f46e5",
-    gradient: "linear-gradient(135deg, #4338ca, #6366f1)",
-    iconBg: "rgba(99, 102, 241, 0.15)",
-    border: "rgba(99, 102, 241, 0.30)",
   },
   {
     id: "mini-stat-cut",
@@ -69,9 +60,6 @@ const MINI_CARDS_CONFIG: MiniCardConfig[] = [
     icon: Scissors,
     valueKey: "cut",
     color: "#e11d48",
-    gradient: "linear-gradient(135deg, #be123c, #f43f5e)",
-    iconBg: "rgba(225, 29, 72, 0.15)",
-    border: "rgba(225, 29, 72, 0.30)",
   },
   {
     id: "mini-stat-loop-cut",
@@ -80,9 +68,6 @@ const MINI_CARDS_CONFIG: MiniCardConfig[] = [
     icon: GitMerge,
     valueKey: "loopCut",
     color: "#7c3aed",
-    gradient: "linear-gradient(135deg, #6d28d9, #8b5cf6)",
-    iconBg: "rgba(124, 58, 237, 0.15)",
-    border: "rgba(124, 58, 237, 0.30)",
   },
   {
     id: "mini-stat-full-piece",
@@ -91,9 +76,6 @@ const MINI_CARDS_CONFIG: MiniCardConfig[] = [
     icon: Layers,
     valueKey: "fullPiece",
     color: "#2563eb",
-    gradient: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
-    iconBg: "rgba(37, 99, 235, 0.15)",
-    border: "rgba(37, 99, 235, 0.30)",
   },
   {
     id: "mini-stat-full-piece-cut",
@@ -101,10 +83,7 @@ const MINI_CARDS_CONFIG: MiniCardConfig[] = [
     unit: "pcs",
     icon: Sparkles,
     valueKey: "fullPieceCut",
-    color: "#d97706",
-    gradient: "linear-gradient(135deg, #b45309, #f59e0b)",
-    iconBg: "rgba(217, 119, 6, 0.15)",
-    border: "rgba(217, 119, 6, 0.30)",
+    color: "#059669",
   },
   {
     id: "mini-stat-karigars",
@@ -113,9 +92,6 @@ const MINI_CARDS_CONFIG: MiniCardConfig[] = [
     icon: Users,
     valueKey: "karigars",
     color: "#0891b2",
-    gradient: "linear-gradient(135deg, #0e7490, #06b6d4)",
-    iconBg: "rgba(8, 145, 178, 0.15)",
-    border: "rgba(8, 145, 178, 0.30)",
   },
   {
     id: "mini-stat-records",
@@ -124,9 +100,6 @@ const MINI_CARDS_CONFIG: MiniCardConfig[] = [
     icon: FileText,
     valueKey: "records",
     color: "#c026d3",
-    gradient: "linear-gradient(135deg, #a21caf, #e879f9)",
-    iconBg: "rgba(192, 38, 211, 0.15)",
-    border: "rgba(192, 38, 211, 0.30)",
   },
 ];
 
@@ -164,14 +137,13 @@ function MiniScorecard({
   label,
   unit,
   value,
-  Icon,
   config,
 }: {
   id: string;
   label: string;
   unit: string;
   value: number;
-  Icon: React.ElementType;
+  Icon?: React.ElementType;
   config: MiniCardConfig;
 }) {
   const display = useCountUp(value);
@@ -183,104 +155,84 @@ function MiniScorecard({
       style={{
         flex: "1 1 0",
         minWidth: 95,
-        maxWidth: 130,
-        height: 58,
-        padding: "0",
-        borderRadius: 10,
+        maxWidth: 125,
+        height: 56,
+        padding: "6px 10px 6px 10px",
+        borderRadius: 9,
         background: "var(--bg-card)",
-        border: `1.5px solid ${config.border}`,
-        boxShadow: "var(--shadow-sm)",
+        border: "1.5px solid var(--border)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         display: "flex",
         flexDirection: "column",
+        justifyContent: "space-between",
         cursor: "default",
-        overflow: "hidden",
         position: "relative",
+        transition: "all 0.18s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = config.color;
+        e.currentTarget.style.boxShadow = "0 3px 8px rgba(0,0,0,0.08)";
+        e.currentTarget.style.transform = "translateY(-1px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--border)";
+        e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)";
+        e.currentTarget.style.transform = "translateY(0)";
       }}
     >
-      {/* Top colorful accent strip */}
-      <div
-        style={{
-          height: 2.5,
-          background: config.gradient,
-          width: "100%",
-          flexShrink: 0,
-        }}
-      />
-
-      {/* Content */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "4px 6px 5px",
-          textAlign: "center",
-        }}
-      >
-        {/* Top Header: Centered Icon + Label */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, width: "100%" }}>
-          <div
-            style={{
-              width: 15,
-              height: 15,
-              borderRadius: 4,
-              background: config.iconBg,
-              color: config.color,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Icon size={9} />
-          </div>
-          <span
-            style={{
-              fontSize: 8.5,
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              color: "var(--text-secondary)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              textAlign: "center",
-            }}
-          >
-            {label}
-          </span>
+      {/* Top: Label + Accent Underline Bar */}
+      <div>
+        <div
+          style={{
+            fontSize: 9.5,
+            fontWeight: 700,
+            color: "var(--text-secondary)",
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            lineHeight: 1.2,
+          }}
+        >
+          {label}
         </div>
+        <div
+          style={{
+            width: 20,
+            height: 2.5,
+            borderRadius: 99,
+            background: config.color,
+            marginTop: 3,
+          }}
+        />
+      </div>
 
-        {/* Bottom Value: Centered Number with bold tabular typography */}
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2.5, width: "100%" }}>
-          <span
-            style={{
-              fontSize: 16,
-              fontWeight: 900,
-              color: "var(--text-primary)",
-              lineHeight: 1,
-              letterSpacing: "-0.035em",
-              fontVariantNumeric: "tabular-nums",
-              fontFamily: "'Inter', system-ui, sans-serif",
-              textAlign: "center",
-            }}
-          >
-            {display.toLocaleString()}
-          </span>
-          <span
-            style={{
-              fontSize: 8,
-              fontWeight: 800,
-              color: config.color,
-              textTransform: "uppercase",
-              letterSpacing: "0.03em",
-            }}
-          >
-            {unit}
-          </span>
-        </div>
+      {/* Bottom: Tabular Bold Value + Unit */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 2.5 }}>
+        <span
+          style={{
+            fontSize: 16,
+            fontWeight: 800,
+            color: "var(--text-primary)",
+            lineHeight: 1,
+            letterSpacing: "-0.03em",
+            fontVariantNumeric: "tabular-nums",
+            fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+          }}
+        >
+          {display.toLocaleString()}
+        </span>
+        <span
+          style={{
+            fontSize: 8,
+            fontWeight: 700,
+            color: "var(--text-muted)",
+            textTransform: "uppercase",
+            letterSpacing: "0.03em",
+          }}
+        >
+          {unit}
+        </span>
       </div>
     </div>
   );
@@ -292,23 +244,23 @@ function SkeletonMiniCard({ config }: { config: MiniCardConfig }) {
       style={{
         flex: "1 1 0",
         minWidth: 95,
-        maxWidth: 130,
-        height: 58,
-        borderRadius: 10,
+        maxWidth: 125,
+        height: 56,
+        padding: "6px 10px 6px 10px",
+        borderRadius: 9,
         background: "var(--bg-card)",
-        border: `1.5px solid var(--border)`,
-        overflow: "hidden",
+        border: "1.5px solid var(--border)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
         opacity: 0.5,
       }}
     >
-      <div style={{ height: 2.5, background: config.gradient, width: "100%" }} />
-      <div style={{ padding: "4px 6px 5px", display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", height: "calc(100% - 2.5px)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, width: "100%" }}>
-          <div style={{ width: 15, height: 15, borderRadius: 4, background: config.iconBg }} />
-          <div className="skeleton" style={{ height: 7, width: "50%", borderRadius: 3 }} />
-        </div>
-        <div className="skeleton" style={{ height: 13, width: "45%", borderRadius: 3 }} />
+      <div>
+        <div className="skeleton" style={{ height: 9.5, width: "60%", borderRadius: 3 }} />
+        <div className="skeleton" style={{ height: 2.5, width: 20, borderRadius: 99, marginTop: 3 }} />
       </div>
+      <div className="skeleton" style={{ height: 16, width: "45%", borderRadius: 3 }} />
     </div>
   );
 }
