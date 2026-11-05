@@ -102,7 +102,8 @@ export interface AggregatedStats {
   grandTotalStoreReceiving: number;
   dailyTrend: DailyProduction[]; // last 14 days
   weeklyTrend: WeeklyProduction[]; // last 8 weeks
-  karigarLeaderboard: KarigarStat[];
+  karigarLeaderboard: KarigarStat[]; // last week (default)
+  karigarLeaderboardThisWeek: KarigarStat[]; // this week
 }
 
 // Active filters shape

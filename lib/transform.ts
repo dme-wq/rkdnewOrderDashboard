@@ -261,6 +261,12 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     total: number; activeDays: Set<string>;
   }>();
 
+  // Karigar leaderboard — this week per karigar
+  const karigarThisWeekTotals = new Map<string, {
+    name: string; phone: string; fullRaw: string;
+    total: number; activeDays: Set<string>;
+  }>();
+
   for (const row of processedRows) {
     const pieces = row.dailyPiecesMade;
     const srp = row.storeReceivingPieces;
@@ -294,7 +300,24 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     if (dateStr === yesterdayStr) yesterdayPieces += pieces;
 
     // This week
-    if (rowDate >= thisWeekStart) thisWeekPieces += pieces;
+    if (rowDate >= thisWeekStart) {
+      thisWeekPieces += pieces;
+
+      // Per-karigar this week stats
+      const existing = karigarThisWeekTotals.get(karigarName);
+      if (existing) {
+        existing.total += pieces;
+        if (pieces > 0) existing.activeDays.add(dateStr);
+      } else {
+        karigarThisWeekTotals.set(karigarName, {
+          name: karigarName,
+          phone: row.karigarInfo.phone,
+          fullRaw: row.karigarInfo.fullRaw,
+          total: pieces,
+          activeDays: pieces > 0 ? new Set([dateStr]) : new Set(),
+        });
+      }
+    }
 
     // Last week
     if (isWithinInterval(rowDate, { start: lastWeekStart, end: lastWeekEnd })) {
@@ -388,6 +411,35 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
       };
     });
 
+  // Build karigar leaderboard — THIS WEEK only, sorted by total desc
+  const allThisWeekItems = Array.from(karigarThisWeekTotals.values()).filter((k) => k.total > 0);
+  const totalThisWeekPieces = allThisWeekItems.reduce((sum, k) => sum + k.total, 0);
+
+  const karigarLeaderboardThisWeek: KarigarStat[] = allThisWeekItems
+    .sort((a, b) => b.total - a.total)
+    .map((k, i) => {
+      const days = k.activeDays.size;
+      const contributionPercent = totalThisWeekPieces > 0
+        ? Math.round((k.total / totalThisWeekPieces) * 1000) / 10
+        : 0;
+      return {
+        name: k.name,
+        phone: k.phone,
+        fullRaw: k.fullRaw,
+        totalPieces: k.total,
+        rank: i + 1,
+        initials: k.name
+          .split(" ")
+          .map((w) => w[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2),
+        lastWeekDays: days,
+        lastWeekAvg: days > 0 ? Math.round(k.total / days) : 0,
+        contributionPercent,
+      };
+    });
+
   return {
     todayPieces,
     yesterdayPieces,
@@ -408,6 +460,7 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     dailyTrend,
     weeklyTrend,
     karigarLeaderboard,
+    karigarLeaderboardThisWeek,
   };
 }
 

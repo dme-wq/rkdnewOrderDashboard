@@ -170,6 +170,7 @@ export default function DashboardPage() {
           <div style={{ marginTop: 20 }}>
             <KarigarRanking
               leaderboard={globalStats?.karigarLeaderboard ?? []}
+              leaderboardThisWeek={globalStats?.karigarLeaderboardThisWeek ?? []}
               isLoading={isLoading}
             />
           </div>

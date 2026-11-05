@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { KarigarStat } from "@/lib/types";
 import { TrendingUp, TrendingDown, Award, AlertTriangle, Calendar, Clock, PieChart } from "lucide-react";
 import { startOfWeek, endOfWeek, subWeeks, format } from "date-fns";
 
 interface KarigarRankingProps {
   leaderboard: KarigarStat[];
+  leaderboardThisWeek?: KarigarStat[];
   isLoading: boolean;
 }
 
@@ -210,38 +212,57 @@ function KarigarRow({ stat, idx, maxPieces, palette, isTop }: KarigarRowProps) {
 }
 
 // ── Last week Mon–Sun range (same logic as transform.ts) ─────────────────────
-// Uses date-fns so it's always consistent with how karigar data is filtered.
-// "Last week" = previous complete Monday-to-Sunday block.
-// Auto-advances every Monday at midnight (client-side date).
-function getLastWeekRange(): { label: string; mon: string; sun: string } {
+function getLastWeekRange(): { label: string } {
   const now = new Date();
-  // Go 1 week back, then find Monday & Sunday of that week
   const anyDayLastWeek = subWeeks(now, 1);
   const mon = startOfWeek(anyDayLastWeek, { weekStartsOn: 1 }); // Monday
   const sun = endOfWeek(anyDayLastWeek, { weekStartsOn: 1 });   // Sunday
   const label = `${format(mon, "d MMM")} – ${format(sun, "d MMM yyyy")}`;
-  return { label, mon: format(mon, "d MMM"), sun: format(sun, "d MMM yyyy") };
+  return { label };
 }
 
-export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) {
-  const { label: weekLabel } = getLastWeekRange();
+// ── This week Mon–Sun range ─────────────────────────────────────────────────
+function getThisWeekRange(): { label: string } {
+  const now = new Date();
+  const mon = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+  const sun = endOfWeek(now, { weekStartsOn: 1 });   // Sunday
+  const label = `${format(mon, "d MMM")} – ${format(sun, "d MMM yyyy")}`;
+  return { label };
+}
 
-  const top5 = leaderboard.slice(0, 5);
-  const bottom5 = [...leaderboard]
+export function KarigarRanking({
+  leaderboard,
+  leaderboardThisWeek = [],
+  isLoading,
+}: KarigarRankingProps) {
+  const [periodTop, setPeriodTop] = useState<"lastWeek" | "thisWeek">("lastWeek");
+  const [periodBottom, setPeriodBottom] = useState<"lastWeek" | "thisWeek">("lastWeek");
+
+  const lastWeekLabel = getLastWeekRange().label;
+  const thisWeekLabel = getThisWeekRange().label;
+
+  // Active dataset for Top 5
+  const activeTopLeaderboard = periodTop === "thisWeek" ? leaderboardThisWeek : leaderboard;
+  const top5 = activeTopLeaderboard.slice(0, 5);
+  const maxTop = top5[0]?.totalPieces ?? 1;
+
+  // Active dataset for Needs Attention
+  const activeBottomLeaderboard = periodBottom === "thisWeek" ? leaderboardThisWeek : leaderboard;
+  const bottom5 = [...activeBottomLeaderboard]
     .filter((k) => k.totalPieces > 0)
     .sort((a, b) => a.totalPieces - b.totalPieces)
     .slice(0, 5);
-
-  const maxTop = top5[0]?.totalPieces ?? 1;
   const maxBot = bottom5[bottom5.length - 1]?.totalPieces ?? 1;
 
   const cardHeaderStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 12,
     marginBottom: 20,
     paddingBottom: 16,
     borderBottom: "1px solid var(--border-light)",
+    flexWrap: "wrap",
   };
 
   return (
@@ -249,53 +270,116 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
       {/* ── Top 5 Highest ── */}
       <div className="card" style={{ padding: "20px 22px" }}>
         <div style={cardHeaderStyle}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: "linear-gradient(135deg, #4338ca, #6366f1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(99,102,241,0.35)",
-            }}
-          >
-            <TrendingUp size={18} color="#fff" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-              Top 5 Highest
+          {/* Left Title & Subtitle */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: "1 1 auto" }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: "linear-gradient(135deg, #4338ca, #6366f1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 12px rgba(99,102,241,0.35)",
+                flexShrink: 0,
+              }}
+            >
+              <TrendingUp size={18} color="#fff" />
             </div>
-            {/* Subtitle: description + last week date range inline */}
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Most pieces produced</span>
-              <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.5 }}>·</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                <Calendar size={9} color="#059669" />
-                <span style={{ fontSize: 10.5, fontWeight: 700, color: "#059669", letterSpacing: "-0.01em" }}>
-                  {weekLabel}
-                </span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                Top 5 Highest
+              </div>
+              {/* Subtitle: description + dynamic week date range inline */}
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Most pieces produced</span>
+                <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.5 }}>·</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                  <Calendar size={10} color="#059669" />
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: "#059669", letterSpacing: "-0.01em" }}>
+                    {periodTop === "thisWeek" ? thisWeekLabel : lastWeekLabel}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-          <div
-            style={{
-              padding: "4px 10px",
-              borderRadius: 99,
-              background: "rgba(99,102,241,0.10)",
-              color: "#6366f1",
-              fontSize: 11,
-              fontWeight: 700,
-              border: "1px solid rgba(99,102,241,0.2)",
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              flexShrink: 0,
-            }}
-          >
-            <Award size={11} />
-            Champions
+
+          {/* Right Controls: This Week/Last Week button + Champions badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            {/* Toggle Buttons */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "var(--bg-elevated)",
+                padding: 2,
+                borderRadius: 8,
+                border: "1px solid var(--border)",
+                gap: 2,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setPeriodTop("lastWeek")}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  border: "none",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: "Inter, sans-serif",
+                  background: periodTop === "lastWeek" ? "#6366f1" : "transparent",
+                  color: periodTop === "lastWeek" ? "#fff" : "var(--text-secondary)",
+                  boxShadow: periodTop === "lastWeek" ? "0 1px 4px rgba(99,102,241,0.30)" : "none",
+                  transition: "all 0.15s ease",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Last Week
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriodTop("thisWeek")}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  border: "none",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: "Inter, sans-serif",
+                  background: periodTop === "thisWeek" ? "#6366f1" : "transparent",
+                  color: periodTop === "thisWeek" ? "#fff" : "var(--text-secondary)",
+                  boxShadow: periodTop === "thisWeek" ? "0 1px 4px rgba(99,102,241,0.30)" : "none",
+                  transition: "all 0.15s ease",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                This Week
+              </button>
+            </div>
+
+            {/* Badge */}
+            <div
+              style={{
+                padding: "4px 10px",
+                borderRadius: 99,
+                background: "rgba(99,102,241,0.10)",
+                color: "#6366f1",
+                fontSize: 11,
+                fontWeight: 700,
+                border: "1px solid rgba(99,102,241,0.2)",
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Award size={11} />
+              Champions
+            </div>
           </div>
         </div>
 
@@ -303,7 +387,7 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
           <SkeletonList />
         ) : top5.length === 0 ? (
           <div style={{ textAlign: "center", padding: "32px 0", color: "var(--text-muted)", fontSize: 13 }}>
-            No data for last week
+            No data for {periodTop === "thisWeek" ? "this week" : "last week"}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -324,53 +408,116 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
       {/* ── Needs Attention ── */}
       <div className="card" style={{ padding: "20px 22px" }}>
         <div style={cardHeaderStyle}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: "linear-gradient(135deg, #be123c, #e11d48)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(225,29,72,0.30)",
-            }}
-          >
-            <TrendingDown size={18} color="#fff" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-              Needs Attention
+          {/* Left Title & Subtitle */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: "1 1 auto" }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: "linear-gradient(135deg, #be123c, #e11d48)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 12px rgba(225,29,72,0.30)",
+                flexShrink: 0,
+              }}
+            >
+              <TrendingDown size={18} color="#fff" />
             </div>
-            {/* Subtitle: description + last week date range inline */}
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Lowest 5 karigars</span>
-              <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.5 }}>·</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                <Calendar size={9} color="#059669" />
-                <span style={{ fontSize: 10.5, fontWeight: 700, color: "#059669", letterSpacing: "-0.01em" }}>
-                  {weekLabel}
-                </span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                Needs Attention
+              </div>
+              {/* Subtitle: description + dynamic week date range inline */}
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Lowest 5 karigars</span>
+                <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.5 }}>·</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                  <Calendar size={10} color="#059669" />
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: "#059669", letterSpacing: "-0.01em" }}>
+                    {periodBottom === "thisWeek" ? thisWeekLabel : lastWeekLabel}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-          <div
-            style={{
-              padding: "4px 10px",
-              borderRadius: 99,
-              background: "rgba(225,29,72,0.08)",
-              color: "#e11d48",
-              fontSize: 11,
-              fontWeight: 700,
-              border: "1px solid rgba(225,29,72,0.18)",
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              flexShrink: 0,
-            }}
-          >
-            <AlertTriangle size={11} />
-            Low Output
+
+          {/* Right Controls: This Week/Last Week button + Low Output badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            {/* Toggle Buttons */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "var(--bg-elevated)",
+                padding: 2,
+                borderRadius: 8,
+                border: "1px solid var(--border)",
+                gap: 2,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setPeriodBottom("lastWeek")}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  border: "none",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: "Inter, sans-serif",
+                  background: periodBottom === "lastWeek" ? "#e11d48" : "transparent",
+                  color: periodBottom === "lastWeek" ? "#fff" : "var(--text-secondary)",
+                  boxShadow: periodBottom === "lastWeek" ? "0 1px 4px rgba(225,29,72,0.30)" : "none",
+                  transition: "all 0.15s ease",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Last Week
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriodBottom("thisWeek")}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  border: "none",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: "Inter, sans-serif",
+                  background: periodBottom === "thisWeek" ? "#e11d48" : "transparent",
+                  color: periodBottom === "thisWeek" ? "#fff" : "var(--text-secondary)",
+                  boxShadow: periodBottom === "thisWeek" ? "0 1px 4px rgba(225,29,72,0.30)" : "none",
+                  transition: "all 0.15s ease",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                This Week
+              </button>
+            </div>
+
+            {/* Badge */}
+            <div
+              style={{
+                padding: "4px 10px",
+                borderRadius: 99,
+                background: "rgba(225,29,72,0.08)",
+                color: "#e11d48",
+                fontSize: 11,
+                fontWeight: 700,
+                border: "1px solid rgba(225,29,72,0.18)",
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <AlertTriangle size={11} />
+              Low Output
+            </div>
           </div>
         </div>
 
@@ -378,7 +525,7 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
           <SkeletonList />
         ) : bottom5.length === 0 ? (
           <div style={{ textAlign: "center", padding: "32px 0", color: "var(--text-muted)", fontSize: 13 }}>
-            No data for last week
+            No data for {periodBottom === "thisWeek" ? "this week" : "last week"}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
