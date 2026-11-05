@@ -78,6 +78,7 @@ export interface KarigarStat {
   initials: string;
   lastWeekDays: number;   // days worked in last week
   lastWeekAvg: number;    // average pieces per day in last week
+  contributionPercent: number; // percentage of total production in last week
 }
 
 // Scorecard stats

@@ -81,11 +81,11 @@ function ProfessionalScorecard({ label, value, Icon }: ProCardDef) {
       className="pro-stat-card"
       style={{
         flex: "1 1 0",
-        minWidth: 150,
-        maxWidth: 215,
-        height: 80,
+        minWidth: 125,
+        maxWidth: 165,
+        height: 70,
         padding: "0",
-        borderRadius: 14,
+        borderRadius: 12,
         background: "var(--bg-card)",
         border: `1.5px solid ${accent.border}`,
         boxShadow: `var(--shadow-sm), 0 0 0 0 ${accent.color}`,
@@ -100,7 +100,7 @@ function ProfessionalScorecard({ label, value, Icon }: ProCardDef) {
       <div style={{
         height: 3,
         background: accent.bg,
-        borderRadius: "14px 14px 0 0",
+        borderRadius: "12px 12px 0 0",
         flexShrink: 0,
       }} />
 
@@ -110,26 +110,15 @@ function ProfessionalScorecard({ label, value, Icon }: ProCardDef) {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: "8px 13px 10px",
+        padding: "6px 8px 7px",
+        textAlign: "center",
       }}>
-        {/* Top Header: Label + Icon */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            color: "var(--text-secondary)",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}>
-            {label}
-          </span>
+        {/* Top Header: Centered Label + Icon */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, width: "100%" }}>
           <div style={{
-            width: 26,
-            height: 26,
-            borderRadius: 8,
+            width: 19,
+            height: 19,
+            borderRadius: 5,
             background: accent.iconBg,
             color: accent.color,
             display: "flex",
@@ -138,30 +127,44 @@ function ProfessionalScorecard({ label, value, Icon }: ProCardDef) {
             flexShrink: 0,
             border: `1px solid ${accent.border}`,
           }}>
-            <Icon size={13} />
+            <Icon size={10} />
           </div>
+          <span style={{
+            fontSize: 9.5,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            color: "var(--text-secondary)",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            textAlign: "center",
+          }}>
+            {label}
+          </span>
         </div>
 
-        {/* Bottom Value */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+        {/* Bottom Value: Centered */}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 3, width: "100%" }}>
           <span style={{
-            fontSize: 23,
+            fontSize: 20,
             fontWeight: 900,
             color: "var(--text-primary)",
             lineHeight: 1,
             letterSpacing: "-0.035em",
             fontVariantNumeric: "tabular-nums",
             fontFeatureSettings: '"tnum"',
+            textAlign: "center",
           }}>
             {display.toLocaleString()}
           </span>
           <span style={{
-            fontSize: 9.5,
+            fontSize: 9,
             fontWeight: 700,
             color: accent.color,
             textTransform: "uppercase",
             letterSpacing: "0.04em",
-            opacity: 0.8,
+            opacity: 0.85,
           }}>
             pcs
           </span>
@@ -175,22 +178,22 @@ function SkeletonCard() {
   return (
     <div style={{
       flex: "1 1 0",
-      minWidth: 150,
-      maxWidth: 215,
-      height: 80,
-      borderRadius: 14,
+      minWidth: 125,
+      maxWidth: 165,
+      height: 70,
+      borderRadius: 12,
       background: "var(--bg-card)",
       border: "1.5px solid var(--border)",
       overflow: "hidden",
       opacity: 0.6,
     }}>
       <div style={{ height: 3, background: "var(--border)" }} />
-      <div style={{ padding: "8px 13px 10px", display: "flex", flexDirection: "column", justifyContent: "space-between", height: "calc(100% - 3px)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ padding: "6px 8px 7px", display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", height: "calc(100% - 3px)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, width: "100%" }}>
+          <div className="skeleton" style={{ width: 19, height: 19, borderRadius: 5 }} />
           <div className="skeleton" style={{ height: 9, width: "55%", borderRadius: 4 }} />
-          <div className="skeleton" style={{ width: 26, height: 26, borderRadius: 8 }} />
         </div>
-        <div className="skeleton" style={{ height: 20, width: "42%", borderRadius: 4 }} />
+        <div className="skeleton" style={{ height: 18, width: "42%", borderRadius: 4 }} />
       </div>
     </div>
   );

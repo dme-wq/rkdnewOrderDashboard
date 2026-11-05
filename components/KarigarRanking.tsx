@@ -1,7 +1,7 @@
 "use client";
 
 import { KarigarStat } from "@/lib/types";
-import { TrendingUp, TrendingDown, Award, AlertTriangle, Calendar, Clock } from "lucide-react";
+import { TrendingUp, TrendingDown, Award, AlertTriangle, Calendar, Clock, PieChart } from "lucide-react";
 import { startOfWeek, endOfWeek, subWeeks, format } from "date-fns";
 
 interface KarigarRankingProps {
@@ -136,24 +136,72 @@ function KarigarRow({ stat, idx, maxPieces, palette, isTop }: KarigarRowProps) {
           />
         </div>
 
-        {/* Row 2: Phone + Days + Avg */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        {/* Row 2: Phone + Days + Avg + Contribution % */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 5 }}>
           {stat.phone && (
-            <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.01em" }}>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.01em", marginRight: 2 }}>
               {stat.phone}
             </span>
           )}
-          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <Calendar size={9} color="var(--text-muted)" />
-            <span style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 600 }}>
-              {stat.lastWeekDays}d worked
-            </span>
+          {/* Days worked */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2.5px 8px",
+              borderRadius: 6,
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border)",
+              fontSize: 11.5,
+              fontWeight: 700,
+              color: "var(--text-secondary)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <Calendar size={11} color="var(--text-muted)" />
+            <span>{stat.lastWeekDays}d worked</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <Clock size={9} color={accentColor} />
-            <span style={{ fontSize: 10, color: accentColor, fontWeight: 700 }}>
-              ~{stat.lastWeekAvg.toLocaleString()} avg/day
-            </span>
+
+          {/* Avg/day */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2.5px 8px",
+              borderRadius: 6,
+              background: isTop ? "rgba(99,102,241,0.09)" : "rgba(225,29,72,0.08)",
+              border: `1px solid ${isTop ? "rgba(99,102,241,0.22)" : "rgba(225,29,72,0.20)"}`,
+              fontSize: 11.5,
+              fontWeight: 800,
+              color: accentColor,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <Clock size={11} color={accentColor} />
+            <span>~{stat.lastWeekAvg.toLocaleString()} avg/day</span>
+          </div>
+
+          {/* % Yogdaan / Contribution */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2.5px 8px",
+              borderRadius: 6,
+              background: isTop ? "rgba(16,185,129,0.10)" : "rgba(249,115,22,0.09)",
+              border: `1px solid ${isTop ? "rgba(16,185,129,0.25)" : "rgba(249,115,22,0.22)"}`,
+              fontSize: 11.5,
+              fontWeight: 800,
+              color: isTop ? "#059669" : "#ea580c",
+              whiteSpace: "nowrap",
+            }}
+            title={`${stat.name}'s contribution in last week's total production`}
+          >
+            <PieChart size={11} color={isTop ? "#059669" : "#ea580c"} />
+            <span>{stat.contributionPercent}% share</span>
           </div>
         </div>
       </div>

@@ -136,9 +136,9 @@ function MiniScorecard({
       className="pro-stat-card"
       style={{
         flex: "1 1 0",
-        minWidth: 125,
-        height: 72,
-        padding: "9px 12px",
+        minWidth: 110,
+        height: 66,
+        padding: "7px 10px",
         borderRadius: 12,
         background: "var(--bg-elevated)",
         border: "1.5px solid var(--border)",
@@ -146,31 +146,18 @@ function MiniScorecard({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
+        alignItems: "center",
         cursor: "default",
         overflow: "hidden",
       }}
     >
-      {/* Top Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-        <span
-          style={{
-            fontSize: 9.5,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            color: "var(--text-secondary)",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {label}
-        </span>
+      {/* Top Header: Centered */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, width: "100%" }}>
         <div
           style={{
-            width: 22,
-            height: 22,
-            borderRadius: 6,
+            width: 18,
+            height: 18,
+            borderRadius: 5,
             background: "rgba(99, 102, 241, 0.10)",
             color: "#6366f1",
             display: "flex",
@@ -179,27 +166,43 @@ function MiniScorecard({
             flexShrink: 0,
           }}
         >
-          <Icon size={11} />
+          <Icon size={10} />
         </div>
-      </div>
-
-      {/* Bottom Value */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
         <span
           style={{
-            fontSize: 19,
+            fontSize: 9.5,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            color: "var(--text-secondary)",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            textAlign: "center",
+          }}
+        >
+          {label}
+        </span>
+      </div>
+
+      {/* Bottom Value: Centered */}
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 3, width: "100%" }}>
+        <span
+          style={{
+            fontSize: 18,
             fontWeight: 800,
             color: "var(--text-primary)",
             lineHeight: 1,
             letterSpacing: "-0.03em",
             fontVariantNumeric: "tabular-nums",
+            textAlign: "center",
           }}
         >
           {display.toLocaleString()}
         </span>
         <span
           style={{
-            fontSize: 9.5,
+            fontSize: 9,
             fontWeight: 600,
             color: "var(--text-muted)",
             textTransform: "uppercase",
@@ -217,23 +220,24 @@ function SkeletonMiniCard() {
     <div
       style={{
         flex: "1 1 0",
-        minWidth: 125,
-        height: 72,
-        padding: "9px 12px",
+        minWidth: 110,
+        height: 66,
+        padding: "7px 10px",
         borderRadius: 12,
         background: "var(--bg-elevated)",
         border: "1.5px solid var(--border)",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
+        alignItems: "center",
         opacity: 0.5,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ height: 9, width: "55%", background: "var(--border)", borderRadius: 4 }} />
-        <div style={{ width: 20, height: 20, background: "var(--border)", borderRadius: 5 }} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, width: "100%" }}>
+        <div style={{ width: 18, height: 18, background: "var(--border)", borderRadius: 5 }} />
+        <div style={{ height: 9, width: "50%", background: "var(--border)", borderRadius: 4 }} />
       </div>
-      <div style={{ height: 18, width: "40%", background: "var(--border)", borderRadius: 4 }} />
+      <div style={{ height: 16, width: "40%", background: "var(--border)", borderRadius: 4 }} />
     </div>
   );
 }

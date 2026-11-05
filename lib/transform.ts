@@ -360,11 +360,16 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
   }
 
   // Build karigar leaderboard — LAST WEEK only, sorted by total desc
-  const karigarLeaderboard: KarigarStat[] = Array.from(karigarLastWeekTotals.values())
-    .filter((k) => k.total > 0)
+  const allLastWeekItems = Array.from(karigarLastWeekTotals.values()).filter((k) => k.total > 0);
+  const totalLastWeekPieces = allLastWeekItems.reduce((sum, k) => sum + k.total, 0);
+
+  const karigarLeaderboard: KarigarStat[] = allLastWeekItems
     .sort((a, b) => b.total - a.total)
     .map((k, i) => {
       const days = k.activeDays.size;
+      const contributionPercent = totalLastWeekPieces > 0
+        ? Math.round((k.total / totalLastWeekPieces) * 1000) / 10
+        : 0;
       return {
         name: k.name,
         phone: k.phone,
@@ -379,6 +384,7 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
           .slice(0, 2),
         lastWeekDays: days,
         lastWeekAvg: days > 0 ? Math.round(k.total / days) : 0,
+        contributionPercent,
       };
     });
 
