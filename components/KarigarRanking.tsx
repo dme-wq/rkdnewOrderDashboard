@@ -1,7 +1,8 @@
 "use client";
 
 import { KarigarStat } from "@/lib/types";
-import { TrendingUp, TrendingDown, Award, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Award, AlertTriangle, Calendar, Clock } from "lucide-react";
+import { startOfWeek, endOfWeek, subWeeks, format } from "date-fns";
 
 interface KarigarRankingProps {
   leaderboard: KarigarStat[];
@@ -35,6 +36,7 @@ function SkeletonList() {
           <div style={{ flex: 1 }}>
             <div className="skeleton" style={{ height: 13, width: "55%", marginBottom: 8, borderRadius: 6 }} />
             <div className="skeleton" style={{ height: 6, width: "100%", borderRadius: 99 }} />
+            <div className="skeleton" style={{ height: 10, width: "70%", marginTop: 6, borderRadius: 4 }} />
           </div>
           <div className="skeleton" style={{ width: 44, height: 22, borderRadius: 8 }} />
         </div>
@@ -54,14 +56,15 @@ interface KarigarRowProps {
 function KarigarRow({ stat, idx, maxPieces, palette, isTop }: KarigarRowProps) {
   const c = palette[idx] ?? palette[palette.length - 1];
   const barWidth = maxPieces > 0 ? Math.max(4, (stat.totalPieces / maxPieces) * 100) : 4;
+  const accentColor = isTop ? c.bar : c.text;
 
   return (
     <div
       style={{
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-start",
         gap: 12,
-        padding: "8px 0",
+        padding: "10px 0",
         borderBottom: "1px solid var(--border-light)",
       }}
     >
@@ -85,13 +88,14 @@ function KarigarRow({ stat, idx, maxPieces, palette, isTop }: KarigarRowProps) {
         {isTop && idx < 3 ? MEDALS[idx] : stat.initials}
       </div>
 
-      {/* Name + bar */}
+      {/* Name + bar + meta */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        {/* Row 1: Name + Total */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
           <span
             style={{
               fontSize: 13,
-              fontWeight: 600,
+              fontWeight: 700,
               color: "var(--text-primary)",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -102,9 +106,9 @@ function KarigarRow({ stat, idx, maxPieces, palette, isTop }: KarigarRowProps) {
           </span>
           <span
             style={{
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 800,
-              color: isTop ? c.bar : c.text,
+              color: accentColor,
               fontVariantNumeric: "tabular-nums",
               marginLeft: 8,
               flexShrink: 0,
@@ -112,35 +116,68 @@ function KarigarRow({ stat, idx, maxPieces, palette, isTop }: KarigarRowProps) {
             }}
           >
             {stat.totalPieces.toLocaleString()}
+            <span style={{ fontSize: 9, fontWeight: 600, color: "var(--text-muted)", marginLeft: 2 }}>pcs</span>
           </span>
         </div>
 
         {/* Progress bar */}
         <div
           style={{
-            height: 6,
+            height: 5,
             background: c.barBg,
             borderRadius: 99,
             overflow: "hidden",
+            marginBottom: 6,
           }}
         >
           <div
             className="progress-fill"
-            style={{ width: `${barWidth}%`, background: c.bar }}
+            style={{ width: `${barWidth}%`, background: accentColor }}
           />
         </div>
 
-        {stat.phone && (
-          <div style={{ fontSize: 10.5, color: "var(--text-muted)", marginTop: 3, letterSpacing: "0.01em" }}>
-            {stat.phone}
+        {/* Row 2: Phone + Days + Avg */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {stat.phone && (
+            <span style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.01em" }}>
+              {stat.phone}
+            </span>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+            <Calendar size={9} color="var(--text-muted)" />
+            <span style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 600 }}>
+              {stat.lastWeekDays}d worked
+            </span>
           </div>
-        )}
+          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+            <Clock size={9} color={accentColor} />
+            <span style={{ fontSize: 10, color: accentColor, fontWeight: 700 }}>
+              ~{stat.lastWeekAvg.toLocaleString()} avg/day
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
+// ── Last week Mon–Sun range (same logic as transform.ts) ─────────────────────
+// Uses date-fns so it's always consistent with how karigar data is filtered.
+// "Last week" = previous complete Monday-to-Sunday block.
+// Auto-advances every Monday at midnight (client-side date).
+function getLastWeekRange(): { label: string; mon: string; sun: string } {
+  const now = new Date();
+  // Go 1 week back, then find Monday & Sunday of that week
+  const anyDayLastWeek = subWeeks(now, 1);
+  const mon = startOfWeek(anyDayLastWeek, { weekStartsOn: 1 }); // Monday
+  const sun = endOfWeek(anyDayLastWeek, { weekStartsOn: 1 });   // Sunday
+  const label = `${format(mon, "d MMM")} – ${format(sun, "d MMM yyyy")}`;
+  return { label, mon: format(mon, "d MMM"), sun: format(sun, "d MMM yyyy") };
+}
+
 export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) {
+  const { label: weekLabel } = getLastWeekRange();
+
   const top5 = leaderboard.slice(0, 5);
   const bottom5 = [...leaderboard]
     .filter((k) => k.totalPieces > 0)
@@ -161,7 +198,7 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-      {/* Top 5 Highest */}
+      {/* ── Top 5 Highest ── */}
       <div className="card" style={{ padding: "20px 22px" }}>
         <div style={cardHeaderStyle}>
           <div
@@ -182,7 +219,17 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
             <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
               Top 5 Highest
             </div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>Most pieces produced</div>
+            {/* Subtitle: description + last week date range inline */}
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Most pieces produced</span>
+              <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.5 }}>·</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <Calendar size={9} color="#059669" />
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: "#059669", letterSpacing: "-0.01em" }}>
+                  {weekLabel}
+                </span>
+              </div>
+            </div>
           </div>
           <div
             style={{
@@ -196,6 +243,7 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
               display: "flex",
               alignItems: "center",
               gap: 4,
+              flexShrink: 0,
             }}
           >
             <Award size={11} />
@@ -207,7 +255,7 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
           <SkeletonList />
         ) : top5.length === 0 ? (
           <div style={{ textAlign: "center", padding: "32px 0", color: "var(--text-muted)", fontSize: 13 }}>
-            No data available
+            No data for last week
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -225,7 +273,7 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
         )}
       </div>
 
-      {/* Needs Attention */}
+      {/* ── Needs Attention ── */}
       <div className="card" style={{ padding: "20px 22px" }}>
         <div style={cardHeaderStyle}>
           <div
@@ -246,7 +294,17 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
             <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
               Needs Attention
             </div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>Lowest 5 karigars</div>
+            {/* Subtitle: description + last week date range inline */}
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Lowest 5 karigars</span>
+              <span style={{ fontSize: 10, color: "var(--text-muted)", opacity: 0.5 }}>·</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <Calendar size={9} color="#059669" />
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: "#059669", letterSpacing: "-0.01em" }}>
+                  {weekLabel}
+                </span>
+              </div>
+            </div>
           </div>
           <div
             style={{
@@ -260,6 +318,7 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
               display: "flex",
               alignItems: "center",
               gap: 4,
+              flexShrink: 0,
             }}
           >
             <AlertTriangle size={11} />
@@ -271,7 +330,7 @@ export function KarigarRanking({ leaderboard, isLoading }: KarigarRankingProps) 
           <SkeletonList />
         ) : bottom5.length === 0 ? (
           <div style={{ textAlign: "center", padding: "32px 0", color: "var(--text-muted)", fontSize: 13 }}>
-            No data available
+            No data for last week
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>

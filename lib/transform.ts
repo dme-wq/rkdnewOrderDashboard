@@ -254,8 +254,12 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     weeklyMap.set(label, { total: 0, weekStart: format(ws, "yyyy-MM-dd") });
   }
 
-  // Karigar leaderboard
-  const karigarTotals = new Map<string, { name: string; phone: string; fullRaw: string; total: number }>();
+  // Karigar leaderboard — last week per karigar
+  // Map: karigarName -> { pieces by date -> Set for days worked }
+  const karigarLastWeekTotals = new Map<string, {
+    name: string; phone: string; fullRaw: string;
+    total: number; activeDays: Set<string>;
+  }>();
 
   for (const row of processedRows) {
     const pieces = row.dailyPiecesMade;
@@ -280,21 +284,8 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     const prev = maxByGroup.get(groupKey) ?? 0;
     maxByGroup.set(groupKey, Math.max(prev, row.totalProductionNum));
 
-    // Active karigars
+    // Active karigars (all time)
     if (pieces > 0) activeKarigarSet.add(karigarName);
-
-    // Karigar totals for leaderboard
-    const existing = karigarTotals.get(karigarName);
-    if (existing) {
-      existing.total += pieces;
-    } else {
-      karigarTotals.set(karigarName, {
-        name: karigarName,
-        phone: row.karigarInfo.phone,
-        fullRaw: row.karigarInfo.fullRaw,
-        total: pieces,
-      });
-    }
 
     if (!rowDate) continue;
 
@@ -306,7 +297,24 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     if (rowDate >= thisWeekStart) thisWeekPieces += pieces;
 
     // Last week
-    if (isWithinInterval(rowDate, { start: lastWeekStart, end: lastWeekEnd })) lastWeekPieces += pieces;
+    if (isWithinInterval(rowDate, { start: lastWeekStart, end: lastWeekEnd })) {
+      lastWeekPieces += pieces;
+
+      // Per-karigar last week stats
+      const existing = karigarLastWeekTotals.get(karigarName);
+      if (existing) {
+        existing.total += pieces;
+        if (pieces > 0) existing.activeDays.add(dateStr);
+      } else {
+        karigarLastWeekTotals.set(karigarName, {
+          name: karigarName,
+          phone: row.karigarInfo.phone,
+          fullRaw: row.karigarInfo.fullRaw,
+          total: pieces,
+          activeDays: pieces > 0 ? new Set([dateStr]) : new Set(),
+        });
+      }
+    }
 
     // This month
     if (rowDate >= thisMonthStart) thisMonthPieces += pieces;
@@ -321,8 +329,6 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     if (isWithinInterval(rowDate, { start: lastQuarterStart, end: lastQuarterEnd })) lastQuarterPieces += pieces;
 
     // Daily trend
-    // If the Date from row matches our formatted dd-MMM-yyyy, or if we can parse it
-    // Wait, row.Date is already normalized to dd-MMM-yyyy by computeDailyDelta!
     if (dailyMap.has(dateStr)) {
       const entry = dailyMap.get(dateStr)!;
       entry.total += pieces;
@@ -353,22 +359,28 @@ export function aggregateStats(processedRows: ProcessedRow[]): AggregatedStats {
     weeklyTrend.push({ weekLabel, weekStart: data.weekStart, totalPieces: data.total });
   }
 
-  // Build karigar leaderboard
-  const karigarLeaderboard: KarigarStat[] = Array.from(karigarTotals.values())
+  // Build karigar leaderboard — LAST WEEK only, sorted by total desc
+  const karigarLeaderboard: KarigarStat[] = Array.from(karigarLastWeekTotals.values())
+    .filter((k) => k.total > 0)
     .sort((a, b) => b.total - a.total)
-    .map((k, i) => ({
-      name: k.name,
-      phone: k.phone,
-      fullRaw: k.fullRaw,
-      totalPieces: k.total,
-      rank: i + 1,
-      initials: k.name
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2),
-    }));
+    .map((k, i) => {
+      const days = k.activeDays.size;
+      return {
+        name: k.name,
+        phone: k.phone,
+        fullRaw: k.fullRaw,
+        totalPieces: k.total,
+        rank: i + 1,
+        initials: k.name
+          .split(" ")
+          .map((w) => w[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2),
+        lastWeekDays: days,
+        lastWeekAvg: days > 0 ? Math.round(k.total / days) : 0,
+      };
+    });
 
   return {
     todayPieces,
@@ -406,6 +418,16 @@ export function getDateRangeForPreset(preset: string): { from: string; to: strin
       return { from: fmt(startOfWeek(now, { weekStartsOn: 1 })), to: fmt(now) };
     case "thisMonth":
       return { from: fmt(startOfMonth(now)), to: fmt(now) };
+    case "lastWeek": {
+      const lws = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+      const lwe = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+      return { from: fmt(lws), to: fmt(lwe) };
+    }
+    case "lastMonth": {
+      const lms = startOfMonth(subMonths(now, 1));
+      const lme = endOfMonth(subMonths(now, 1));
+      return { from: fmt(lms), to: fmt(lme) };
+    }
     case "thisQuarter":
       return { from: fmt(startOfQuarter(now)), to: fmt(now) };
     default:

@@ -73,9 +73,11 @@ export interface KarigarStat {
   name: string;
   phone: string;
   fullRaw: string;
-  totalPieces: number;
+  totalPieces: number;    // last week pieces only
   rank: number;
   initials: string;
+  lastWeekDays: number;   // days worked in last week
+  lastWeekAvg: number;    // average pieces per day in last week
 }
 
 // Scorecard stats
@@ -113,4 +115,4 @@ export interface ActiveFilters {
   responsibilities: string[];
 }
 
-export type DatePreset = "today" | "thisWeek" | "thisMonth" | "thisQuarter" | "custom";
+export type DatePreset = "today" | "thisWeek" | "lastWeek" | "thisMonth" | "lastMonth" | "thisQuarter" | "custom";

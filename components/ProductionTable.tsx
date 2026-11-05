@@ -24,7 +24,9 @@ const PAGE_SIZES = [10, 20, 50, 100];
 const DATE_PRESETS: { label: string; value: DatePreset | "custom" }[] = [
   { label: "Today", value: "today" },
   { label: "This Week", value: "thisWeek" },
+  { label: "Last Week", value: "lastWeek" },
   { label: "This Month", value: "thisMonth" },
+  { label: "Last Month", value: "lastMonth" },
   { label: "Custom", value: "custom" },
 ];
 

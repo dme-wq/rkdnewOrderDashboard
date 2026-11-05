@@ -58,89 +58,114 @@ interface ProCardDef {
   label: string;
   value: number;
   Icon: React.ComponentType<{ size?: number }>;
+  accentColor?: string;
+  accentBg?: string;
+  gradient?: string;
 }
+
+// Card accent configs — one per scorecard
+const CARD_ACCENTS: Record<string, { color: string; bg: string; iconBg: string; border: string }> = {
+  "Today Total":     { color: "#6366f1", bg: "linear-gradient(135deg,#4f46e5,#6366f1)", iconBg: "rgba(99,102,241,0.14)", border: "rgba(99,102,241,0.25)" },
+  "Yesterday Total": { color: "#8b5cf6", bg: "linear-gradient(135deg,#7c3aed,#8b5cf6)", iconBg: "rgba(139,92,246,0.14)", border: "rgba(139,92,246,0.25)" },
+  "Weekly Total":    { color: "#0891b2", bg: "linear-gradient(135deg,#0e7490,#0891b2)", iconBg: "rgba(8,145,178,0.14)", border: "rgba(8,145,178,0.25)" },
+  "Grand Total":     { color: "#059669", bg: "linear-gradient(135deg,#047857,#059669)", iconBg: "rgba(5,150,105,0.14)", border: "rgba(5,150,105,0.25)" },
+  "Full Piece + Cut":{ color: "#d97706", bg: "linear-gradient(135deg,#b45309,#d97706)", iconBg: "rgba(217,119,6,0.14)",  border: "rgba(217,119,6,0.25)"  },
+};
 
 function ProfessionalScorecard({ label, value, Icon }: ProCardDef) {
   const display = useCountUp(value);
+  const accent = CARD_ACCENTS[label] ?? { color: "#6366f1", bg: "linear-gradient(135deg,#4f46e5,#6366f1)", iconBg: "rgba(99,102,241,0.14)", border: "rgba(99,102,241,0.22)" };
 
   return (
     <div
       className="pro-stat-card"
       style={{
         flex: "1 1 0",
-        minWidth: 155,
-        maxWidth: 220,
-        height: 76,
-        padding: "10px 14px",
-        borderRadius: 12,
+        minWidth: 150,
+        maxWidth: 215,
+        height: 80,
+        padding: "0",
+        borderRadius: 14,
         background: "var(--bg-card)",
-        border: "1.5px solid var(--border)",
-        boxShadow: "var(--shadow-sm)",
+        border: `1.5px solid ${accent.border}`,
+        boxShadow: `var(--shadow-sm), 0 0 0 0 ${accent.color}`,
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
         cursor: "default",
         position: "relative",
         overflow: "hidden",
       }}
     >
-      {/* Top Header: Label + Icon */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-        <span
-          style={{
-            fontSize: 10.5,
+      {/* Accent top bar */}
+      <div style={{
+        height: 3,
+        background: accent.bg,
+        borderRadius: "14px 14px 0 0",
+        flexShrink: 0,
+      }} />
+
+      {/* Content */}
+      <div style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: "8px 13px 10px",
+      }}>
+        {/* Top Header: Label + Icon */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{
+            fontSize: 10,
             fontWeight: 700,
             textTransform: "uppercase",
-            letterSpacing: "0.05em",
+            letterSpacing: "0.06em",
             color: "var(--text-secondary)",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
-          }}
-        >
-          {label}
-        </span>
-        <div
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: 6,
-            background: "rgba(99, 102, 241, 0.10)",
-            color: "#6366f1",
+          }}>
+            {label}
+          </span>
+          <div style={{
+            width: 26,
+            height: 26,
+            borderRadius: 8,
+            background: accent.iconBg,
+            color: accent.color,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-          }}
-        >
-          <Icon size={12} />
+            border: `1px solid ${accent.border}`,
+          }}>
+            <Icon size={13} />
+          </div>
         </div>
-      </div>
 
-      {/* Bottom Value: Big Number + Pcs suffix */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-        <span
-          style={{
-            fontSize: 22,
-            fontWeight: 800,
+        {/* Bottom Value */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+          <span style={{
+            fontSize: 23,
+            fontWeight: 900,
             color: "var(--text-primary)",
             lineHeight: 1,
-            letterSpacing: "-0.03em",
+            letterSpacing: "-0.035em",
             fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          {display.toLocaleString()}
-        </span>
-        <span
-          style={{
-            fontSize: 10.5,
-            fontWeight: 600,
-            color: "var(--text-muted)",
+            fontFeatureSettings: '"tnum"',
+          }}>
+            {display.toLocaleString()}
+          </span>
+          <span style={{
+            fontSize: 9.5,
+            fontWeight: 700,
+            color: accent.color,
             textTransform: "uppercase",
-          }}
-        >
-          pcs
-        </span>
+            letterSpacing: "0.04em",
+            opacity: 0.8,
+          }}>
+            pcs
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -148,27 +173,25 @@ function ProfessionalScorecard({ label, value, Icon }: ProCardDef) {
 
 function SkeletonCard() {
   return (
-    <div
-      style={{
-        flex: "1 1 0",
-        minWidth: 155,
-        maxWidth: 220,
-        height: 76,
-        padding: "10px 14px",
-        borderRadius: 12,
-        background: "var(--bg-card)",
-        border: "1.5px solid var(--border)",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        opacity: 0.5,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ height: 10, width: "60%", background: "var(--border)", borderRadius: 4 }} />
-        <div style={{ width: 22, height: 22, background: "var(--border)", borderRadius: 6 }} />
+    <div style={{
+      flex: "1 1 0",
+      minWidth: 150,
+      maxWidth: 215,
+      height: 80,
+      borderRadius: 14,
+      background: "var(--bg-card)",
+      border: "1.5px solid var(--border)",
+      overflow: "hidden",
+      opacity: 0.6,
+    }}>
+      <div style={{ height: 3, background: "var(--border)" }} />
+      <div style={{ padding: "8px 13px 10px", display: "flex", flexDirection: "column", justifyContent: "space-between", height: "calc(100% - 3px)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className="skeleton" style={{ height: 9, width: "55%", borderRadius: 4 }} />
+          <div className="skeleton" style={{ width: 26, height: 26, borderRadius: 8 }} />
+        </div>
+        <div className="skeleton" style={{ height: 20, width: "42%", borderRadius: 4 }} />
       </div>
-      <div style={{ height: 20, width: "45%", background: "var(--border)", borderRadius: 4 }} />
     </div>
   );
 }
