@@ -144,11 +144,11 @@ function formatDate(d: string) {
 function SkeletonRow({ i }: { i: number }) {
   return (
     <tr style={{ borderBottom: "1px solid var(--border-light)" }}>
-      {[44, 85, 110, 170, 75, 75, 140, 95, 85, 85].map((w, j) => (
+      {[44, 105, 110, 190, 85, 140, 95, 85, 85].map((w, j) => (
         <td key={j} style={{ padding: "14px 14px" }}>
           <div className="skeleton" style={{
-            height: j === 6 ? 28 : 13, width: `${w * (0.5 + (i * j % 5) * 0.1)}px`,
-            maxWidth: "100%", borderRadius: j === 6 ? 99 : 5,
+            height: j === 5 ? 28 : 13, width: `${w * (0.5 + (i * j % 5) * 0.1)}px`,
+            maxWidth: "100%", borderRadius: j === 5 ? 99 : 5,
           }} />
         </td>
       ))}
@@ -932,7 +932,6 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                   Design <SortIcon dir={sortKey === "Design Name" ? sortDir : "none"} />
                 </div>
               </th>
-              <th style={{ ...thBase, width: "9%", textAlign: "center" }}>Color</th>
               <th style={{ ...thBase, width: "10%", textAlign: "center" }}>Size</th>
               <th style={{ ...thSortable, width: "18%" }} onClick={() => handleSort("Name of Karigar 1" as SortKey)}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
@@ -965,7 +964,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
 
             {!isLoading && paginatedRows.length === 0 && (
               <tr>
-                <td colSpan={10} style={{ padding: "72px 24px", textAlign: "center" }}>
+                <td colSpan={9} style={{ padding: "72px 24px", textAlign: "center" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
                     <div style={{
                       width: 64, height: 64, borderRadius: 20,
@@ -1054,26 +1053,6 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }} title={row["Design Name"] ?? ""}>
                       {row["Design Name"] || "—"}
-                    </div>
-                  </td>
-
-                  {/* Color */}
-                  <td style={{ ...tdBase, width: 100 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                      {row["Yarn Color"] && row["Yarn Color"] !== "-" && row["Yarn Color"] !== "" ? (
-                        <>
-                          <div style={{
-                            width: 10, height: 10, borderRadius: "50%",
-                            background: `hsl(${hashStr(row["Yarn Color"]) % 360},65%,55%)`,
-                            border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0,
-                          }} />
-                          <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 80 }}>
-                            {row["Yarn Color"]}
-                          </span>
-                        </>
-                      ) : (
-                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>—</span>
-                      )}
                     </div>
                   </td>
 
@@ -1214,7 +1193,7 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                 background: "linear-gradient(90deg, var(--bg-elevated), var(--bg-card))",
                 borderTop: "2px solid var(--border)",
               }}>
-                <td colSpan={7} style={{
+                <td colSpan={6} style={{
                   padding: "13px 18px",
                   textAlign: "right",
                   fontSize: 11, fontWeight: 700,
