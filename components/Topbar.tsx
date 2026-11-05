@@ -7,9 +7,12 @@ import {
   Moon,
   Calendar,
   CalendarDays,
+  CalendarRange,
+  Clock,
   BarChart3,
   Award,
   Layers,
+  GitMerge,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -69,9 +72,15 @@ interface ProCardDef {
 const CARD_ACCENTS: Record<string, { color: string; border: string }> = {
   "Today Total":      { color: "#2563eb", border: "rgba(37,99,235,0.22)" },
   "Yesterday Total":  { color: "#7c3aed", border: "rgba(124,58,237,0.22)" },
-  "Weekly Total":     { color: "#0891b2", border: "rgba(8,145,178,0.22)" },
+  "This Week Total":  { color: "#0891b2", border: "rgba(8,145,178,0.22)" },
+  "Last Week Total":  { color: "#4f46e5", border: "rgba(79,70,229,0.22)" },
+  "This Month Total": { color: "#059669", border: "rgba(5,150,105,0.22)" },
+  "This Month":       { color: "#059669", border: "rgba(5,150,105,0.22)" },
+  "Last Month Total": { color: "#c026d3", border: "rgba(192,38,211,0.22)" },
+  "Last Month":       { color: "#c026d3", border: "rgba(192,38,211,0.22)" },
+  "Loop + Cut":       { color: "#8b5cf6", border: "rgba(139,92,246,0.22)" },
+  "Full Piece + Cut": { color: "#10b981", border: "rgba(16,185,129,0.22)" },
   "Grand Total":      { color: "#f59e0b", border: "rgba(245,158,11,0.25)" },
-  "Full Piece + Cut": { color: "#059669", border: "rgba(5,150,105,0.22)" },
 };
 
 function ProfessionalScorecard({ label, value }: ProCardDef) {
@@ -82,11 +91,11 @@ function ProfessionalScorecard({ label, value }: ProCardDef) {
     <div
       className="pro-stat-card"
       style={{
-        flex: "1 1 0",
-        minWidth: 125,
-        maxWidth: 165,
-        height: 68,
-        padding: "8px 12px 8px 12px",
+        flex: "0 0 auto",
+        minWidth: 114,
+        maxWidth: 148,
+        height: 65,
+        padding: "7px 11px 7px 11px",
         borderRadius: 10,
         background: "var(--bg-card)",
         border: "1.5px solid var(--border)",
@@ -113,7 +122,7 @@ function ProfessionalScorecard({ label, value }: ProCardDef) {
       <div>
         <div
           style={{
-            fontSize: 11,
+            fontSize: 10.5,
             fontWeight: 700,
             color: "var(--text-secondary)",
             letterSpacing: "-0.01em",
@@ -127,11 +136,11 @@ function ProfessionalScorecard({ label, value }: ProCardDef) {
         </div>
         <div
           style={{
-            width: 26,
+            width: 24,
             height: 3,
             borderRadius: 99,
             background: accent.color,
-            marginTop: 4,
+            marginTop: 3.5,
           }}
         />
       </div>
@@ -140,7 +149,7 @@ function ProfessionalScorecard({ label, value }: ProCardDef) {
       <div style={{ display: "flex", alignItems: "baseline", gap: 3.5 }}>
         <span
           style={{
-            fontSize: 21,
+            fontSize: 19,
             fontWeight: 800,
             color: "var(--text-primary)",
             lineHeight: 1,
@@ -153,7 +162,7 @@ function ProfessionalScorecard({ label, value }: ProCardDef) {
         </span>
         <span
           style={{
-            fontSize: 9.5,
+            fontSize: 9,
             fontWeight: 700,
             color: "var(--text-muted)",
             textTransform: "uppercase",
@@ -171,11 +180,11 @@ function SkeletonCard() {
   return (
     <div
       style={{
-        flex: "1 1 0",
-        minWidth: 125,
-        maxWidth: 165,
-        height: 68,
-        padding: "8px 12px 8px 12px",
+        flex: "0 0 auto",
+        minWidth: 114,
+        maxWidth: 148,
+        height: 65,
+        padding: "7px 11px 7px 11px",
         borderRadius: 10,
         background: "var(--bg-card)",
         border: "1.5px solid var(--border)",
@@ -186,10 +195,10 @@ function SkeletonCard() {
       }}
     >
       <div>
-        <div className="skeleton" style={{ height: 11, width: "65%", borderRadius: 4 }} />
-        <div className="skeleton" style={{ height: 3, width: 26, borderRadius: 99, marginTop: 4 }} />
+        <div className="skeleton" style={{ height: 10.5, width: "65%", borderRadius: 4 }} />
+        <div className="skeleton" style={{ height: 3, width: 24, borderRadius: 99, marginTop: 3.5 }} />
       </div>
-      <div className="skeleton" style={{ height: 21, width: "50%", borderRadius: 4 }} />
+      <div className="skeleton" style={{ height: 19, width: "50%", borderRadius: 4 }} />
     </div>
   );
 }
@@ -245,19 +254,39 @@ export function Topbar({
       Icon: CalendarDays,
     },
     {
-      label: "Weekly Total",
+      label: "This Week Total",
       value: stats?.thisWeekPieces ?? 0,
       Icon: BarChart3,
+    },
+    {
+      label: "Last Week Total",
+      value: stats?.lastWeekPieces ?? 0,
+      Icon: Clock,
+    },
+    {
+      label: "This Month Total",
+      value: stats?.thisMonthPieces ?? 0,
+      Icon: CalendarRange,
+    },
+    {
+      label: "Last Month Total",
+      value: stats?.lastMonthPieces ?? 0,
+      Icon: Calendar,
+    },
+    {
+      label: "Loop + Cut",
+      value: stats ? (stats.loopCutPieces ?? (stats.loopPieces + stats.cutPieces)) : 0,
+      Icon: GitMerge,
+    },
+    {
+      label: "Full Piece + Cut",
+      value: stats ? (stats.fullPieceCutPieces ?? (stats.fullPiecePieces + stats.cutPieces)) : 0,
+      Icon: Layers,
     },
     {
       label: "Grand Total",
       value: stats?.grandTotalStoreReceiving ?? 0,
       Icon: Award,
-    },
-    {
-      label: "Full Piece + Cut",
-      value: stats ? stats.fullPiecePieces + stats.cutPieces : 0,
-      Icon: Layers,
     },
   ];
 
@@ -366,14 +395,14 @@ export function Topbar({
                 lineHeight: "14px",
               }}
             >
-              5
+              {mainCards.length}
             </span>
             <ChevronDown size={13} />
           </button>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, overflowX: "auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, overflowX: "auto", maxWidth: "100%", padding: "2px 0" }}>
             {isLoading
-              ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+              ? Array.from({ length: mainCards.length }).map((_, i) => <SkeletonCard key={i} />)
               : mainCards.map((card) => (
                   <ProfessionalScorecard
                     key={card.label}
