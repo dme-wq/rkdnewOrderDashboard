@@ -28,6 +28,18 @@ const KARIGAR_COLORS = [
   "#f59e0b", "#f97316", "#ef4444", "#ec4899", "#a855f7",
 ];
 
+const SMART_PERSON_EMOJIS = [
+  "🧑‍🏭", "👨‍🔧", "👷‍♂️", "🧑‍🎨", "🧔", "👳‍♂️", "👨‍💼", "🧑‍💻",
+  "🧑‍🦱", "🤠", "🧑‍🦰", "👨‍🦳", "🦸‍♂️", "🧑‍🔬", "👨‍🎓", "🧑‍🚀",
+];
+
+function getKarigarPersonEmoji(name: string): string {
+  if (!name || name === "—" || name === "?") return "👤";
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return SMART_PERSON_EMOJIS[Math.abs(h) % SMART_PERSON_EMOJIS.length];
+}
+
 function SkeletonChart({ height = 220 }: { height?: number }) {
   return (
     <div
@@ -245,14 +257,15 @@ export function ProductionCharts({ stats, isLoading }: ProductionChartsProps) {
                 )}
               </div>
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0"
                 style={{
                   background: KARIGAR_COLORS[i % KARIGAR_COLORS.length] + "33",
                   color: KARIGAR_COLORS[i % KARIGAR_COLORS.length],
                   border: `1.5px solid ${KARIGAR_COLORS[i % KARIGAR_COLORS.length]}55`,
+                  userSelect: "none",
                 }}
               >
-                {k.initials}
+                {getKarigarPersonEmoji(k.name)}
               </div>
               {/* Name + bar */}
               <div className="flex-1 min-w-0">

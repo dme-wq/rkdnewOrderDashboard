@@ -63,6 +63,37 @@ function getAvatarColor(name: string) {
 function getPoColor(po: string) {
   return PO_COLORS[hashStr(po) % PO_COLORS.length];
 }
+
+// Smart person / craftsman emojis deterministically mapped to karigar's name
+const SMART_PERSON_EMOJIS = [
+  "🧑‍🏭", // master maker / artisan
+  "👨‍🔧", // skilled craftsman
+  "👷‍♂️", // skilled builder
+  "🧑‍🎨", // creator / designer / tufter
+  "🧔",  // artisan with beard
+  "👳‍♂️", // master in turban
+  "👨‍💼", // pro operator / supervisor
+  "🧑‍💻", // precision specialist
+  "🧑‍🦱", // craftsman with curly hair
+  "🤠",  // skilled diligent maker
+  "🧑‍🦰", // artisan with auburn hair
+  "👨‍🦳", // senior master karigar
+  "🦸‍♂️", // star achiever
+  "🧑‍🔬", // master specialist
+  "👨‍🎓", // skilled craftsman
+  "🧑‍🚀", // fast output maker
+  "👨‍🦲", // master artisan
+  "🧑‍🌾", // diligent maker
+  "🕵️‍♂️", // quality specialist
+  "🧑‍🔧", // precision tufter
+];
+
+function getKarigarPersonEmoji(name: string): string {
+  if (!name || name === "—" || name === "?") return "👤";
+  const h = hashStr(name.trim().toLowerCase());
+  return SMART_PERSON_EMOJIS[h % SMART_PERSON_EMOJIS.length];
+}
+
 function initials(name: string) {
   return name.split(" ").map(w => w[0] ?? "").join("").slice(0, 2).toUpperCase();
 }
@@ -928,15 +959,24 @@ export function ProductionTable({ rows, allRows, filters, onFiltersChange, isLoa
                   {/* Karigar */}
                   <td style={{ ...tdBase, minWidth: 160 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: 10,
-                        background: avColor.bg, color: avColor.text,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 11, fontWeight: 800, flexShrink: 0,
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.10)",
-                        letterSpacing: "-0.02em",
-                      }}>
-                        {initials(row.karigarInfo.name || "?")}
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 9,
+                          background: avColor.bg,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 17,
+                          flexShrink: 0,
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+                          border: "1px solid rgba(255,255,255,0.20)",
+                          userSelect: "none",
+                        }}
+                        title={row.karigarInfo.name || undefined}
+                      >
+                        {getKarigarPersonEmoji(row.karigarInfo.name || row["Name of Karigar 1"])}
                       </div>
                       <div style={{ minWidth: 0, textAlign: "left" }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.2, whiteSpace: "nowrap" }}>
